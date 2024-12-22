@@ -8,7 +8,7 @@ import cors from 'cors'
 console.log('server working')
 
 const PORT = 5000;
-const DB_URL =  `mongodb+srv://hermannamreg:quCEeWlYwebDcZ5p@cluster0.6d33l.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+const DB_URL =  `mongodb+srv://kontaktherman:PKTC2XYGPqc0mMlf@cluster0.irxhj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
 
 const app = express();
 
@@ -21,7 +21,6 @@ app.use('/api', router);
 //    res.status(200).json('Сервер работает');
 //});
 
-
 async function startApp() {
     try {
         await mongoose.connect(DB_URL, {useUnifiedTopology: true, useNewUrlParser: true});
@@ -30,7 +29,5 @@ async function startApp() {
         console.log(e)
     }
 }
-
-
 
 startApp();
