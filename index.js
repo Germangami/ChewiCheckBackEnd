@@ -2,23 +2,28 @@ import express from 'express';
 import mongoose from 'mongoose';
 import router from './router.js';
 import cors from 'cors';
-
+import dotenv from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api';
-import PostData from './postData.js'
+
+dotenv.config();
+
 
 console.log('Server is starting...');
 
 const PORT = 5000;
 
 // Подключение к MongoDB
-const DB_URL = `mongodb+srv://kontaktherman:PKTC2XYGPqc0mMlf@cluster0.irxhj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const app = express();
 
-const token = '7652562820:AAHI8UQf_tV9I9Ty-2609QfYCDMhGRQBc9E';
+const token = process.env.TELEGRAM_BOT_TOKEN;
+const DB_URL = process.env.MONGO_DB_URL;
 const webAppUrl = 'https://chewi-check.com/';
 
 const bot = new TelegramBot(token, {polling: true});
+
+console.log(process.env.TELEGRAM_BOT_TOKEN, 'TELEGRAM TOKEN');
+console.log(process.env.MONGO_DB_URL, 'MONGO DB');
 
 // Middleware для обработки JSON и CORS
 app.use(express.json());

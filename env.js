@@ -1,1 +1,0 @@
-export const DB_URL = `mongodb+srv://kontaktherman:PKTC2XYGPqc0mMlf@cluster0.irxhj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
