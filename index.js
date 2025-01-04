@@ -117,7 +117,8 @@ async function startApp() {
                 reply_markup: {
                     inline_keyboard: [
                         [
-                            {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}}
+                            {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}},
+                            {text: 'Добавить Клиента 2', web_app: {url: `https://t.me/share/url?url=https://t.me/ChewiCheckBot`}}
                         ]
                     ]
                 }
