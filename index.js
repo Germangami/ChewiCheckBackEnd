@@ -4,14 +4,12 @@ import router from './router.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api';
+import User from './model/User.js';
 
 dotenv.config();
 console.log('Server is starting...');
 
 const PORT = 5000;
-
-// Подключение к MongoDB
-
 const app = express();
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -23,30 +21,10 @@ const bot = new TelegramBot(token, {polling: true});
 console.log(process.env.TELEGRAM_BOT_TOKEN, 'TELEGRAM TOKEN');
 console.log(process.env.MONGO_DB_URL, 'MONGO DB');
 
-// Middleware для обработки JSON и CORS
 app.use(express.json());
 app.use(cors());
 app.use('/api', router);
 
-// Тестовый эндпоинт
-// app.get('/', (req, res) => {
-//     res.status(200).json({ message: 'Сервер работает!' });
-// });
-
-// Проверка подключения к базе данных
-// mongoose.connection.on('connected', () => {
-//     console.log('MongoDB connection established');
-// });
-
-// mongoose.connection.on('error', (err) => {
-//     console.error('MongoDB connection error:', err.message);
-// });
-
-// mongoose.connection.on('disconnected', () => {
-//     console.warn('⚠️ MongoDB connection lost');
-// });
-
-// Запуск приложения
 async function startApp() {
     try {
         console.log('Connecting to MongoDB...');
@@ -88,6 +66,12 @@ async function startApp() {
         
             if (text.startsWith('/start ref_')) {
                 try {
+                    const existingUser = await User.findOne({tgId: msg.from.id});
+
+                    if (existingUser) {
+                        await bot.sendMessage(chatId, `Пользователь с таким ID уже существует: ${msg?.from?.first_name}`);
+                        return;
+                    }
                     const response = await fetch('https://chewi-check.com/api/user', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -133,25 +117,4 @@ async function startApp() {
     }
 }
 
-// app.get('/api/test-db', async (req, res) => {
-//     try {
-//         const result = await mongoose.connection.db.listCollections().toArray();
-//         res.status(200).json(result);
-//     } catch (e) {
-//         console.error("Error fetching collections:", e);
-//         res.status(500).json({ error: "Database error" });
-//     }
-// });
-
-// Обработка необработанных ошибок
-// process.on('unhandledRejection', (reason, promise) => {
-//     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-// });
-
-// process.on('uncaughtException', (err) => {
-//     console.error('Uncaught Exception thrown:', err.message);
-//     process.exit(1); // Завершаем процесс
-// });
-
-// Запуск
 startApp();
