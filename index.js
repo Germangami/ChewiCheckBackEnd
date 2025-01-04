@@ -6,8 +6,6 @@ import dotenv from 'dotenv';
 import TelegramBot from 'node-telegram-bot-api';
 
 dotenv.config();
-
-
 console.log('Server is starting...');
 
 const PORT = 5000;
@@ -117,8 +115,7 @@ async function startApp() {
                 reply_markup: {
                     inline_keyboard: [
                         [
-                            {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}},
-                            {text: 'Добавить Клиента 2', web_app: {url: `https://t.me/share/url?url=https://t.me/ChewiCheckBot`}}
+                            {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}}
                         ]
                     ]
                 }
