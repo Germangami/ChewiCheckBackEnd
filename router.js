@@ -15,7 +15,7 @@ router.post('/user', async (req, res) => {
 
 router.put('/user/update', async (req, res) => {
   try {
-    const { tgId, nickname, startDate, endDate, totalTrainings, remainingTrainings, membershipType } = req.body;
+    const { tgId, nickname, startDate, endDate, totalTrainings, remainingTrainings, membershipType, note } = req.body;
 
     if (!tgId) {
       return res.status(400).json({ error: 'tgId не передан' });
