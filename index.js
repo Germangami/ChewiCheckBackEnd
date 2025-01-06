@@ -25,6 +25,8 @@ app.use(express.json());
 app.use(cors());
 app.use('/api', router);
 
+console.log('CHECK BAGS')
+
 async function startApp() {
     try {
         console.log('Connecting to MongoDB...');
