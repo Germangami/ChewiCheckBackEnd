@@ -15,23 +15,23 @@ router.post('/user', async (req, res) => {
 
 router.put('/user/update', async (req, res) => {
   try {
-    const { tgId, startDate, endDate, totalTrainings, remainingTrainings, membershipType } = req.body;
+    const { tgId, nickname, startDate, endDate, totalTrainings, remainingTrainings, membershipType } = req.body;
 
     if (!tgId) {
       return res.status(400).json({ error: 'tgId не передан' });
     }
 
     const updatedUser = await User.findOneAndUpdate(
-      { tgId }, // Ищем пользователя по tgId
+      { tgId },
       {
-        startDate,
-        endDate,
-        totalTrainings,
-        remainingTrainings,
-        // type,
-        membershipType
+        ...(nickname && { nickname }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
+        ...(totalTrainings && { totalTrainings }),
+        ...(remainingTrainings && { remainingTrainings }),
+        ...(membershipType && { membershipType })
       },
-      { new: true } // Возвращаем обновленный документ
+      { new: true }
     );
 
     if (!updatedUser) {
