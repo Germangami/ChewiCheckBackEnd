@@ -29,7 +29,8 @@ router.put('/user/update', async (req, res) => {
         ...(endDate && { endDate }),
         ...(totalTrainings && { totalTrainings }),
         ...(remainingTrainings && { remainingTrainings }),
-        ...(membershipType && { membershipType })
+        ...(membershipType && { membershipType }),
+        ...(note && { note })
       },
       { new: true }
     );
