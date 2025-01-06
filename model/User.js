@@ -12,6 +12,7 @@ const User = new mongoose.Schema({
     totalTrainings: {type: Number, required: false},
     type: {type: String, require: false},
     membershipType: {type: String, require: false},
+    note: {type: String, require: false},
     attendanceHistory: [
         {
           date: { type: Date, required: false },
