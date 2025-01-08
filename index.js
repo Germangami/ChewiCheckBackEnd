@@ -103,24 +103,16 @@ async function startApp() {
             }
 
             if (text.startsWith('добавить клиента')) {
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}}
+                await bot.sendMessage(chatId, 'Доступные команды', {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [
+                                {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}}
+                            ]
                         ]
-                    ]
-                }
+                    }
+                })   
             }
-        
-            // await bot.sendMessage(chatId, 'Доступные команды', {
-            //     reply_markup: {
-            //         inline_keyboard: [
-            //             [
-            //                 {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}}
-            //             ]
-            //         ]
-            //     }
-            // })
         
         });
 
