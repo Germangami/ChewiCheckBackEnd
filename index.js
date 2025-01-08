@@ -107,7 +107,7 @@ async function startApp() {
                     reply_markup: {
                         inline_keyboard: [
                             [
-                                {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}}
+                                {text: 'Добавить клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}}
                             ]
                         ]
                     }
