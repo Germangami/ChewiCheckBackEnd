@@ -101,8 +101,8 @@ async function startApp() {
                     await bot.sendMessage(chatId, 'Произошла ошибка при добавлении клиента.');
                 }
             }
-        
-            await bot.sendMessage(chatId, 'Доступные команды', {
+
+            if (text.startsWith('добавить клиента')) {
                 reply_markup: {
                     inline_keyboard: [
                         [
@@ -110,7 +110,17 @@ async function startApp() {
                         ]
                     ]
                 }
-            })
+            }
+        
+            // await bot.sendMessage(chatId, 'Доступные команды', {
+            //     reply_markup: {
+            //         inline_keyboard: [
+            //             [
+            //                 {text: 'Добавить Клиента', web_app: {url: `${webAppUrl}` + '/invite-client'}}
+            //             ]
+            //         ]
+            //     }
+            // })
         
         });
 
