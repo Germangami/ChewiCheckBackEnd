@@ -12,7 +12,7 @@ const PORT = process.env.PORT;
 const DB_URL = process.env.MONGO_DB_URL;
 
 // Telegram Bot
-const bot = new Bot(process.env.BOT_TOKEN);
+const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN);
 
 // Настройка webhook для /api/bot
 app.use('/api/bot', webhookCallback(bot, 'express'));
