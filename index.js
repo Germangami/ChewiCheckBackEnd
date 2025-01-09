@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 const DB_URL = process.env.MONGO_DB_URL;
-const token = process.send.TELEGRAM_BOT_TOKEN;
+const token = process.env.TELEGRAM_BOT_TOKEN;
 const pageUrl = `https://chewi-check.com`;
 
 const bot = new TelegramBot(token, { 
