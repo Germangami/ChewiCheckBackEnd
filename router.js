@@ -1,5 +1,6 @@
 import Router from 'express';
 import User from './model/User.js';
+import { Referral } from './model/Referral.js';
 
 const router = new Router();
 
@@ -9,6 +10,16 @@ router.post('/user', async (req, res) => {
     const post = await User.create({tgId, first_name, last_name, username, type});
     res.json(post);
   } catch(e) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/referral', async (req, res) => {
+  try {
+    const { tgId, first_name } = req.body;
+    const post = await Referral.create({ tgId, first_name });
+    res.json(post);
+  } catch (e) {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
