@@ -36,22 +36,3 @@ const startServer = async () => {
 };
 
 startServer();
-
-async function startApp() {
-    try {
-        await mongoose.connect(DB_URL, {
-            useUnifiedTopology: true,
-            useNewUrlParser: true,
-        });
-
-
-        app.listen(PORT, () =>
-            console.log(`Server is running on http://localhost:${PORT}`)
-        );
-    } catch (error) {
-        console.error('Error starting the server:', error.message);
-        process.exit(1); // Завершаем процесс с ошибкой
-    }
-}
-
-startApp();
