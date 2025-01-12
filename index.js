@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import router from './router.js';
+import clientRouter from './router/client-router.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
@@ -14,6 +15,7 @@ const DB_URL = process.env.MONGO_DB_URL;
 app.use(express.json());
 app.use(cors());
 app.use('/api', router);
+app.use('/client', clientRouter);
 
 const connectDB = async () => {
     try {
@@ -21,13 +23,13 @@ const connectDB = async () => {
         console.log('Connected to MongoDB');
     } catch (error) {
         console.error('Error connecting to MongoDB:', error.message);
-        process.exit(1); // Завершить процесс в случае ошибки
+        process.exit(1);
     }
 };
 
 const startServer = async () => {
     try {
-        await connectDB(); // Сначала подключаем базу
+        await connectDB();
         app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
     } catch (error) {
         console.error('Error starting the server:', error.message);
