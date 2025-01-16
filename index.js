@@ -4,12 +4,29 @@ import router from './router.js';
 import clientRouter from './router/client-router.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { Server } from 'socket.io';
+import https from 'https';
+import fs from 'fs';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
 const DB_URL = process.env.MONGO_DB_URL;
+
+
+// Создаем HTTPS сервер
+const httpsOptions = {
+    key: fs.readFileSync('/etc/nginx/chewi-check.com.key'),
+    cert: fs.readFileSync('/etc/nginx/chewi-check.com.fullchain.pem')
+};
+const server = https.createServer(httpsOptions, app);
+const io = new Server(server, {
+    cors: {
+        origin: 'https://chewi-check.com/',
+        methods: ['GET', 'POST', 'PUT', 'DELETE']
+    }
+});
 
 // Middleware
 app.use(express.json());
@@ -30,11 +47,31 @@ const connectDB = async () => {
 const startServer = async () => {
     try {
         await connectDB();
-        app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+        // Используем server.listen, а не app.listen
+        server.listen(PORT, () => {
+            console.log(`Server is running on https://localhost:${PORT}`);
+        });
     } catch (error) {
         console.error('Error starting the server:', error.message);
         process.exit(1);
     }
 };
+
+// WebSocket
+io.on('connection', (socket) => {
+    console.log('A user connected:', socket.id);
+
+    // Слушаем обновления клиента
+    socket.on('updateClient', (data) => {
+        console.log('Client updated:', data);
+
+        // Рассылаем обновления всем подключенным клиентам
+        io.emit('clientUpdated', data);
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected:', socket.id);
+    });
+});
 
 startServer();

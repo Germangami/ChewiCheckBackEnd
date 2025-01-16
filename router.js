@@ -7,7 +7,7 @@ router.post('/user', UserController.createUser);
 
 router.put('/user/update', UserController.updateUser);
 
-router.put("/user/updateTrainings", UserController.updateTrainingsUser);
+router.get("/user/updateTrainings", UserController.updateTrainingsUser);
 
 router.get("/user", UserController.getAllUsers);
 

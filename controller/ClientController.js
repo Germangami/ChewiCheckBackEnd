@@ -3,8 +3,8 @@ import Client from '../model/Client.js';
 class ClientController {
     async createClient(req, res) {
         try {
-            const { tgId, first_name, last_name, username, nickName, role } = req.body;
-            const post = await Client.create({ tgId, first_name, last_name, username, nickName, role });
+            const { tgId, trainerId, first_name, last_name, username, nickName, role } = req.body;
+            const post = await Client.create({ tgId, trainerId, first_name, last_name, username, nickName, role });
             res.json(post);
         } catch (error) {
             console.error('Error creating client:', error.message);
@@ -13,7 +13,7 @@ class ClientController {
     }
 
     async updateClient(req, res) {
-        const { _id, tgId, first_name, last_name, username, nickname, role } = req.body;
+        const { _id, tgId, first_name, last_name, username, nickname, role, note, totalTrainings, remainingTrainings } = req.body;
     
         const updateData = {};
     
@@ -23,6 +23,9 @@ class ClientController {
         if (username) updateData.username = username;
         if (nickname) updateData.nickname = nickname;
         if (role) updateData.role = role;
+        if (note) updateData.note = note;
+        if (totalTrainings) updateData.totalTrainings = totalTrainings;
+        if (remainingTrainings) updateData.remainingTrainings = remainingTrainings;
     
         try {
             const client = await Client.findOne({ _id });
@@ -36,6 +39,80 @@ class ClientController {
             res.json(updatedClient);
         } catch (error) {
             console.error('Error updating client:', error.message);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    async updateClientTrainings(req, res) {
+        console.log('UPDATE BLIA CLIENT TRANING')
+        const { _id } = req.body;
+        console.log(_id, ': ID!', ': remainingTrainings!')
+        try {
+            const currentClient = await Client.findById(_id);
+
+            if (!currentClient) {
+                return res.status(404).json({ error: 'Client not found' });
+            }
+
+            if (currentClient.remainingTrainings > 0) {
+                currentClient.remainingTrainings -= 1;
+                await currentClient.save();
+                return res.status(200).json(currentClient);
+            } else {
+                return res.status(400).json({ error: 'No remaining trainings to mark' });
+            }
+        } catch(error) {
+            console.error(error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    }
+
+    async updateClientAboniment(req, res) {
+        console.log('PAM PAM!')
+        const { _id, aboniment } = req.body; // Получаем ID клиента и абонемент из тела запроса
+        console.log(_id, aboniment, 'UPDATE CLIENT ABONIMENT');
+    
+        try {
+            const currentClient = await Client.findById(_id);
+    
+            if (!currentClient) {
+                return res.status(404).json({ error: 'Client not found' });
+            }
+    
+            // Устанавливаем параметры в зависимости от стоимости абонемента
+            let totalTrainings = 0;
+            let remainingTrainings = 0;
+    
+            if (aboniment === 200) {
+                totalTrainings = 8;
+            } else if (aboniment === 300) {
+                totalTrainings = 12;
+            } else {
+                return res.status(400).json({ error: 'Invalid aboniment value' });
+            }
+    
+            remainingTrainings = totalTrainings;
+    
+            // Текущая дата
+            const currentDate = new Date();
+    
+            // Дата окончания занятий (ровно через месяц)
+            const endDate = new Date();
+            endDate.setMonth(currentDate.getMonth() + 1);
+    
+            // Обновляем поля клиента
+            currentClient.aboniment = aboniment;
+            currentClient.totalTrainings = totalTrainings;
+            currentClient.remainingTrainings = remainingTrainings;
+            currentClient.startDate = currentDate.toISOString();
+            currentClient.endDate = endDate.toISOString();
+    
+            // Сохраняем изменения
+            const updatedClient = await currentClient.save();
+    
+            res.status(200).json(updatedClient);
+        } catch (error) {
+            console.error('Error updating aboniment:', error.message);
             res.status(500).json({ error: 'Internal server error' });
         }
     }
