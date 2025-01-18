@@ -1,4 +1,5 @@
 import Client from '../model/Client.js';
+import { io } from '../index.js';
 
 class ClientController {
     async createClient(req, res) {
@@ -42,6 +43,8 @@ class ClientController {
             }
     
             const updatedClient = await Client.findByIdAndUpdate(_id, updateData, { new: true });
+
+            io.emit('clientUpdated', updatedClient);
     
             res.json(updatedClient);
         } catch (error) {

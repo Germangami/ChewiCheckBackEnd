@@ -59,7 +59,8 @@ const startServer = async () => {
 
 // WebSocket
 io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+    // Когда новый клиент подключается, выводим информацию в консоль
+    console.log(`Client connected: ${socket.id}`);
 
     // Слушаем обновления клиента
     socket.on('updateClient', (data) => {
@@ -69,9 +70,12 @@ io.on('connection', (socket) => {
         io.emit('clientUpdated', data);
     });
 
+    // Слушаем событие отключения клиента
     socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
+        console.log(`Client disconnected: ${socket.id}`);
     });
 });
+
+export { io };
 
 startServer();
