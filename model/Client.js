@@ -13,7 +13,8 @@ const clientSchema = new mongoose.Schema({
     endDate: {type: String, required: false},
     totalTrainings: { type: Number, required: false },
     remainingTrainings: { type: Number, required: false },
-    aboniment: {type: Number, required: false}
+    aboniment: {type: Number, required: false},
+    lastTrainingDate: { type: String, required: false },
 }, { timestamps: true });
 
 export default mongoose.model('Client', clientSchema);

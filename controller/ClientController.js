@@ -4,6 +4,13 @@ class ClientController {
     async createClient(req, res) {
         try {
             const { tgId, trainerId, first_name, last_name, username, nickName, role } = req.body;
+
+            const existingClient = await Client.findOne({ tgId });
+
+            if (existingClient) {
+                return res.status(409).json({ error: 'Client already exists' });
+            }
+            
             const post = await Client.create({ tgId, trainerId, first_name, last_name, username, nickName, role });
             res.json(post);
         } catch (error) {
@@ -44,9 +51,9 @@ class ClientController {
     }
 
     async updateClientTrainings(req, res) {
-        console.log('UPDATE BLIA CLIENT TRANING')
         const { _id } = req.body;
-        console.log(_id, ': ID!', ': remainingTrainings!')
+        const today = new Date().toISOString().slice(0, 10);
+
         try {
             const currentClient = await Client.findById(_id);
 
@@ -54,8 +61,13 @@ class ClientController {
                 return res.status(404).json({ error: 'Client not found' });
             }
 
+            if (currentClient.lastTrainingDate === today) {
+                return res.status(400).json({ error: 'You have already marked attendance for today' });
+            }
+
             if (currentClient.remainingTrainings > 0) {
                 currentClient.remainingTrainings -= 1;
+                currentClient.lastTrainingDate = today;
                 await currentClient.save();
                 return res.status(200).json(currentClient);
             } else {
