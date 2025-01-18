@@ -23,7 +23,7 @@ const httpsOptions = {
 const server = https.createServer(httpsOptions, app);
 const io = new Server(server, {
     cors: {
-        origin: 'https://chewi-check.com/',
+        origin: '*',
         methods: ['GET', 'POST', 'PUT', 'DELETE']
     }
 });
