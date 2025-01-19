@@ -7,12 +7,19 @@ import dotenv from 'dotenv';
 import { Server } from 'socket.io';
 import https from 'https';
 import fs from 'fs';
+import { Bot, InlineKeyboard, GrammyError, HttpError } from "grammy";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const DB_URL = process.env.MONGO_DB_URL;
+const WEBAPP_URL = 'https://chewi-check.com';
+
+//BOTSETTINGS
+const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN);
+const trainerId = 6448727138;
+const adminId = 469408413;
 
 // HTTPS опции для сервера
 const httpsOptions = {
@@ -65,6 +72,87 @@ io.on('connection', (socket) => {
   });
 });
 
+//КОД БОТА
+bot.command('start', async (ctx) => {
+  console.log(ctx.match, 'COMMAND START');
+
+  if (ctx.match) {
+      const trainer = ctx.match;
+      console.log(trainer, 'TRAINER 1');
+
+      const clientData = {
+          tgId: ctx.from.id,
+          trainerId,
+          first_name: ctx.from.first_name ? ctx.from.first_name : '',
+          last_name: ctx.from.last_name ? ctx.from.last_name : '',
+          username: ctx.from.username ? ctx.from.username : '',
+          role: 'Client'
+      }
+
+      const response = await fetch(`https://chewi-check.com/client/create`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(clientData)
+      });
+
+      if (!response.ok) {
+          ctx.reply('Client exist!')
+          throw new Error(`Server error: ${response.status}`);
+      }
+      const data = await response.json();
+      ctx.reply('Client created:', data?.first_name ? data?.first_name : data?.username);
+      await ctx.reply(`${ctx?.from?.first_name} Welcome to Chewi Check Bot! 👋`, {
+          reply_markup: inlineKeyboardForClient,
+      });
+      console.log('Client created:', data);
+  } else {
+      if (ctx.from.id === trainerId) {
+          await ctx.reply(`${ctx?.from?.first_name} Welcome to Chewi Check Bot! 👋`, {
+              reply_markup: inlineKeyboardForCoach,
+          });
+      } else if(ctx.from.id === adminId) {
+          await ctx.reply(`${ctx?.from?.first_name} Welcome to Chewi Check Bot! 👋`, {
+              reply_markup: inlineKeyboardForAdmin,
+          });
+      } else {
+          await ctx.reply(`${ctx?.from?.first_name} Welcome to Chewi Check Bot! 👋`, {
+              reply_markup: inlineKeyboardForClient,
+          });
+      }
+  }
+});
+
+const inlineKeyboardForAdmin = new InlineKeyboard()
+    .webApp('Open', {url: `${WEBAPP_URL}`})
+    .row()
+    .url('add new Coach', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=${adminId}&text=hi!`)
+    .row()
+    .url('add new Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=${adminId}&text=hi!`)
+
+const inlineKeyboardForCoach = new InlineKeyboard()
+    .webApp('Open', {url: `${WEBAPP_URL}`})
+    .row()
+    .url('add new Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=${trainerId}&text=hi!`)
+
+const inlineKeyboardForClient = new InlineKeyboard()
+    .webApp('Open', {url: `${WEBAPP_URL}`})
+
+bot.catch((err) => {
+  const ctx = err.ctx;
+  console.log(`Cath ERROR ${ctx.update.update_id}: `);
+  const e = err.error;
+
+  if (e instanceof GrammyError) {
+      console.error(`Error in request: `, e.description);
+  } else if (e instanceof HttpError) {
+      console.error(`Couldn't not conntect TELEGRAM: `, e);
+  } else {
+      console.error(`Unknown error: `, e);
+  }
+})
+
 // Запуск сервера
 const startServer = async () => {
   try {
@@ -78,6 +166,7 @@ const startServer = async () => {
   }
 };
 
+bot.start();
 startServer();
 
 export { io };
