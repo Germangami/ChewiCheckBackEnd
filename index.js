@@ -1,10 +1,10 @@
-import WebSocket, { WebSocketServer } from 'ws';
 import express from 'express';
 import mongoose from 'mongoose';
 import router from './router.js';
 import clientRouter from './router/client-router.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { Server } from 'socket.io';
 import https from 'https';
 import fs from 'fs';
 import { Bot, InlineKeyboard, GrammyError, HttpError } from "grammy";
@@ -29,29 +29,15 @@ const httpsOptions = {
 
 // Создаем HTTPS сервер
 const server = https.createServer(httpsOptions, app);
-const wss = new WebSocketServer({ server });
 
-// Логика WebSocket
-wss.on('connection', (socket) => {
-  socket.on('message', (data) => {
-    const { type, from, message } = JSON.parse(data);
-    console.log(type, from, message, 'WEB SOCKET NGXS')
-
-    if (type === 'message') {
-      const event = JSON.stringify({
-        type: '[Client] Add message',
-        from,
-        message,
-      });
-
-      // Рассылаем сообщение всем подключенным клиентам
-      wss.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(event);
-        }
-      });
-    }
-  });
+// Создаем Socket.IO сервер
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  },
+  transports: ['polling', 'websocket'], // Транспорты
+  path: '/socket.io/', // Путь, совпадающий с клиентом и Nginx
 });
 
 // Middleware
@@ -70,6 +56,21 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+
+// WebSocket логика
+io.on('connection', (socket) => {
+  console.log(`Client connected: ${socket.id}`);
+  console.log(`Transport: ${socket.conn.transport.name}`);
+
+  socket.on('updateClient', (data) => {
+    console.log('Client updated:', data);
+    io.emit('clientUpdated', data); // Широковещательная рассылка обновления
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${socket.id}`);
+  });
+});
 
 //КОД БОТА
 bot.command('start', async (ctx) => {
@@ -168,4 +169,4 @@ const startServer = async () => {
 bot.start();
 startServer();
 
-// export { io };
+export { io };
