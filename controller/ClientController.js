@@ -1,5 +1,5 @@
 import Client from '../model/Client.js';
-import { io } from '../index.js';
+// import { io } from '../index.js';
 
 class ClientController {
     async createClient(req, res) {
@@ -13,7 +13,7 @@ class ClientController {
             }
             
             const newClient = await Client.create({ tgId, trainerId, first_name, last_name, username, nickName, role });
-            io.emit('clientUpdated', newClient);
+            // io.emit('clientUpdated', newClient);
             res.json(newClient);
         } catch (error) {
             console.error('Error creating client:', error.message);
@@ -45,7 +45,7 @@ class ClientController {
     
             const updatedClient = await Client.findByIdAndUpdate(_id, updateData, { new: true });
 
-            io.emit('clientUpdated', updatedClient);
+            // io.emit('clientUpdated', updatedClient);
     
             res.json(updatedClient);
         } catch (error) {
@@ -74,7 +74,7 @@ class ClientController {
                 currentClient.lastTrainingDate = today;
                 await currentClient.save();
 
-                io.emit('clientUpdated', currentClient);
+                // io.emit('clientUpdated', currentClient);
                 return res.status(200).json(currentClient);
             } else {
                 return res.status(400).json({ error: 'No remaining trainings to mark' });
@@ -121,7 +121,7 @@ class ClientController {
     
             const updatedClient = await currentClient.save();
 
-            io.emit('clientUpdated', updatedClient);
+            // io.emit('clientUpdated', updatedClient);
             res.status(200).json(updatedClient);
         } catch (error) {
             console.error('Error updating aboniment:', error.message);
