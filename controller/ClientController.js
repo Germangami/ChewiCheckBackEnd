@@ -12,8 +12,9 @@ class ClientController {
                 return res.status(409).json({ error: 'Client already exists' });
             }
             
-            const post = await Client.create({ tgId, trainerId, first_name, last_name, username, nickName, role });
-            res.json(post);
+            const newClient = await Client.create({ tgId, trainerId, first_name, last_name, username, nickName, role });
+            io.emit('clientUpdated', newClient);
+            res.json(newClient);
         } catch (error) {
             console.error('Error creating client:', error.message);
             res.status(500).json({ error: 'Internal server error' });
@@ -72,6 +73,8 @@ class ClientController {
                 currentClient.remainingTrainings -= 1;
                 currentClient.lastTrainingDate = today;
                 await currentClient.save();
+
+                io.emit('clientUpdated', currentClient);
                 return res.status(200).json(currentClient);
             } else {
                 return res.status(400).json({ error: 'No remaining trainings to mark' });
@@ -83,9 +86,7 @@ class ClientController {
     }
 
     async updateClientAboniment(req, res) {
-        console.log('PAM PAM!')
-        const { _id, aboniment } = req.body; // Получаем ID клиента и абонемент из тела запроса
-        console.log(_id, aboniment, 'UPDATE CLIENT ABONIMENT');
+        const { _id, aboniment } = req.body;
     
         try {
             const currentClient = await Client.findById(_id);
@@ -94,7 +95,6 @@ class ClientController {
                 return res.status(404).json({ error: 'Client not found' });
             }
     
-            // Устанавливаем параметры в зависимости от стоимости абонемента
             let totalTrainings = 0;
             let remainingTrainings = 0;
     
@@ -108,23 +108,20 @@ class ClientController {
     
             remainingTrainings = totalTrainings;
     
-            // Текущая дата
             const currentDate = new Date();
     
-            // Дата окончания занятий (ровно через месяц)
             const endDate = new Date();
             endDate.setMonth(currentDate.getMonth() + 1);
     
-            // Обновляем поля клиента
             currentClient.aboniment = aboniment;
             currentClient.totalTrainings = totalTrainings;
             currentClient.remainingTrainings = remainingTrainings;
             currentClient.startDate = currentDate.toISOString();
             currentClient.endDate = endDate.toISOString();
     
-            // Сохраняем изменения
             const updatedClient = await currentClient.save();
-    
+
+            io.emit('clientUpdated', updatedClient);
             res.status(200).json(updatedClient);
         } catch (error) {
             console.error('Error updating aboniment:', error.message);
