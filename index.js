@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import router from './router.js';
 import clientRouter from './router/client-router.js';
+import test1Router from './router/test1.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Server } from 'socket.io';
@@ -45,6 +46,7 @@ app.use(express.json());
 app.use(cors());
 app.use('/api', router);
 app.use('/client', clientRouter);
+app.use('test', test1Router)
 
 // MongoDB подключение
 const connectDB = async () => {
