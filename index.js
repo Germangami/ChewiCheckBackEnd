@@ -127,7 +127,9 @@ bot.command('start', async (ctx) => {
 });
 
 const inlineKeyboardForAdmin = new InlineKeyboard()
-    .webApp('Open', {url: `${WEBAPP_URL}`})
+    .webApp('Prod', {url: `${WEBAPP_URL}`})
+    .row()
+    .webApp('Local', {url: `https://e869-93-105-176-50.ngrok-free.app`})
     .row()
     .url('add new Coach', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=${adminId}&text=hi!`)
     .row()
