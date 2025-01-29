@@ -170,99 +170,36 @@ bot.command("checkSubscriptions", async (ctx) => {
     }
 });
 
-// Временно изменим функцию checkSubscriptionStatus для тестирования
 const checkSubscriptionStatus = async () => {
   try {
     const currentDate = new Date();
     console.log("Current date:", currentDate);
     
-    // Проверяем клиентов, у которых через 3 дня закончится абонемент
-    const warningDate = new Date();
-    warningDate.setDate(warningDate.getDate() + 3);
-    
-    // Преобразуем даты в одинаковый формат для сравнения
-    const startOfWarningDate = new Date(warningDate.toISOString().split('T')[0]);
-    console.log("Warning date:", startOfWarningDate);
-    
-    const clientsToWarn = await Client.find({
-      endDate: {
-        $gte: currentDate.toISOString(),
-        $lte: warningDate.toISOString()
-      },
-      isActive: true
-    });
+    // Находим всех активных клиентов
+    const activeClients = await Client.find({ isActive: true });
+    console.log("Found active clients:", activeClients.length);
 
-    console.log("Found clients to warn:", clientsToWarn.length);
-    console.log("Clients:", clientsToWarn);
-
-    // Отправляем предупреждения через телеграм бот
-    for (const client of clientsToWarn) {
+    // Выводим информацию о каждом клиенте для отладки
+    for (const client of activeClients) {
+      console.log(`\nChecking client: ${client.tgId}`);
+      console.log(`End date: ${client.endDate}`);
+      console.log(`Remaining trainings: ${client.remainingTrainings}`);
+      
       try {
-        console.log(`Sending warning to client ${client.tgId}`);
+        // Отправляем тестовое сообщение каждому активному клиенту
         await bot.api.sendMessage(
           client.tgId,
-          `⚠️ Внимание! Ваш абонемент закончится ${new Date(client.endDate).toLocaleDateString()}.\nОсталось тренировок: ${client.remainingTrainings}`
+          `🔍 Тестовое уведомление:\nДата окончания: ${client.endDate}\nОсталось тренировок: ${client.remainingTrainings}`
         );
+        console.log(`Successfully sent message to ${client.tgId}`);
       } catch (error) {
-        if (error instanceof GrammyError) {
-          console.error("Error sending message:", error.description);
-        } else {
-          console.error("Other error:", error);
-        }
+        console.error(`Failed to send message to ${client.tgId}:`, error);
       }
     }
 
-    // Обновляем статус клиентов с истекшим абонементом
-    const expiredClients = await Client.updateMany(
-      {
-        endDate: { $lt: currentDate.toISOString().split('T')[0] },
-        isActive: true
-      },
-      {
-        $set: { 
-          isActive: false,
-          remainingTrainings: 0,
-          totalTrainings: 0,
-          startDate: null,
-          endDate: null,
-          aboniment: null
-        }
-      }
-    );
-
-    // Уведомляем клиентов об истечении абонемента
-    const expiredClientsList = await Client.find({
-      endDate: { $lt: currentDate.toISOString().split('T')[0] },
-      isActive: false
-    });
-
-    for (const client of expiredClientsList) {
-      try {
-        await bot.api.sendMessage(
-          client.tgId,
-          '❌ Ваш абонемент закончился. Пожалуйста, обновите его для продолжения тренировок.'
-        );
-        
-        // Отправляем обновление через websocket
-        io.emit('clientUpdated', client);
-      } catch (error) {
-        if (error instanceof GrammyError) {
-          console.error("Error sending message:", error.description);
-        } else {
-          console.error("Other error:", error);
-        }
-      }
-    }
-
-    console.log(`Updated ${expiredClients?.modifiedCount || 0} expired subscriptions`);
   } catch (error) {
-    console.error('Error checking subscription status:', error);
+    console.error('Error in test check:', error);
   }
-};
-
-// Запускаем проверку раз в день в 10:00 утра
-const startSubscriptionCheck = () => {
-  schedule.scheduleJob('0 10 * * *', checkSubscriptionStatus);
 };
 
 // Добавляем запуск проверки в существующую функцию startServer
@@ -272,7 +209,6 @@ const startServer = async () => {
     server.listen(PORT, () => {
       console.log(`Server is running on https://localhost:${PORT}`);
     });
-    startSubscriptionCheck(); // Добавляем запуск проверки подписок
   } catch (error) {
     console.error('Error starting the server:', error.message);
     process.exit(1);
