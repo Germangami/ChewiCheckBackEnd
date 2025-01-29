@@ -9,6 +9,8 @@ import { Server } from 'socket.io';
 import https from 'https';
 import fs from 'fs';
 import { Bot, InlineKeyboard, GrammyError, HttpError } from "grammy";
+import schedule from 'node-schedule';
+import Client from './model/Client.js';
 
 dotenv.config();
 
@@ -157,13 +159,114 @@ bot.catch((err) => {
   }
 })
 
-// Запуск сервера
+// Добавляем тестовую команду для бота
+bot.command("checkSubscriptions", async (ctx) => {
+    if (ctx.from.id === adminId) { // Проверяем, что команду вызывает админ
+        await ctx.reply("Starting subscription check...");
+        await checkSubscriptionStatus();
+        await ctx.reply("Subscription check completed!");
+    } else {
+        await ctx.reply("Sorry, this command is for administrators only.");
+    }
+});
+
+// Временно изменим функцию checkSubscriptionStatus для тестирования
+const checkSubscriptionStatus = async () => {
+  try {
+    const currentDate = new Date();
+    console.log("Running subscription check at:", currentDate);
+    
+    // Для тестирования: проверяем клиентов, у которых абонемент закончится через 1 день
+    const warningDate = new Date();
+    warningDate.setDate(warningDate.getDate() + 1); // Изменено с 3 на 1 день
+    const warningDateStr = warningDate.toISOString().split('T')[0];
+    
+    console.log("Checking for subscriptions ending on:", warningDateStr);
+    
+    const clientsToWarn = await Client.find({
+      endDate: warningDateStr,
+      isActive: true
+    });
+
+    console.log("Found clients to warn:", clientsToWarn.length);
+
+    // Отправляем предупреждения через телеграм бот
+    for (const client of clientsToWarn) {
+      try {
+        await bot.api.sendMessage(
+          client.tgId,
+          `⚠️ Внимание! Ваш абонемент закончится через 3 дня.\nОсталось тренировок: ${client.remainingTrainings}`
+        );
+      } catch (error) {
+        if (error instanceof GrammyError) {
+          console.error("Error sending message:", error.description);
+        } else {
+          console.error("Other error:", error);
+        }
+      }
+    }
+
+    // Обновляем статус клиентов с истекшим абонементом
+    const expiredClients = await Client.updateMany(
+      {
+        endDate: { $lt: currentDate.toISOString().split('T')[0] },
+        isActive: true
+      },
+      {
+        $set: { 
+          isActive: false,
+          remainingTrainings: 0,
+          totalTrainings: 0,
+          startDate: null,
+          endDate: null,
+          aboniment: null
+        }
+      }
+    );
+
+    // Уведомляем клиентов об истечении абонемента
+    const expiredClientsList = await Client.find({
+      endDate: { $lt: currentDate.toISOString().split('T')[0] },
+      isActive: false
+    });
+
+    for (const client of expiredClientsList) {
+      try {
+        await bot.api.sendMessage(
+          client.tgId,
+          '❌ Ваш абонемент закончился. Пожалуйста, обновите его для продолжения тренировок.'
+        );
+        
+        // Отправляем обновление через websocket
+        io.emit('clientUpdated', client);
+      } catch (error) {
+        if (error instanceof GrammyError) {
+          console.error("Error sending message:", error.description);
+        } else {
+          console.error("Other error:", error);
+        }
+      }
+    }
+
+    console.log(`Updated ${expiredClients.modifiedCount} expired subscriptions`);
+  } catch (error) {
+    console.error('Error checking subscription status:', error);
+  }
+};
+
+// Запускаем проверку раз в день в 10:00 утра
+const startSubscriptionCheck = () => {
+  schedule.scheduleJob('0 10 * * *', checkSubscriptionStatus);
+};
+
+// Добавляем запуск проверки в существующую функцию startServer
 const startServer = async () => {
   try {
     await connectDB();
     server.listen(PORT, () => {
       console.log(`Server is running on https://localhost:${PORT}`);
     });
+    startSubscriptionCheck(); // Добавляем запуск проверки подписок
   } catch (error) {
     console.error('Error starting the server:', error.message);
     process.exit(1);

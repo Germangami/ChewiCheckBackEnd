@@ -118,6 +118,7 @@ class ClientController {
             currentClient.remainingTrainings = remainingTrainings;
             currentClient.startDate = currentDate.toISOString();
             currentClient.endDate = endDate.toISOString();
+            currentClient.isActive = true;
     
             const updatedClient = await currentClient.save();
 
