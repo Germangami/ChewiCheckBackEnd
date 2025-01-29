@@ -174,28 +174,34 @@ bot.command("checkSubscriptions", async (ctx) => {
 const checkSubscriptionStatus = async () => {
   try {
     const currentDate = new Date();
-    console.log("Running subscription check at:", currentDate);
+    console.log("Current date:", currentDate);
     
-    // Для тестирования: проверяем клиентов, у которых абонемент закончится через 1 день
+    // Проверяем клиентов, у которых через 3 дня закончится абонемент
     const warningDate = new Date();
-    warningDate.setDate(warningDate.getDate() + 1); // Изменено с 3 на 1 день
-    const warningDateStr = warningDate.toISOString().split('T')[0];
+    warningDate.setDate(warningDate.getDate() + 3);
     
-    console.log("Checking for subscriptions ending on:", warningDateStr);
+    // Преобразуем даты в одинаковый формат для сравнения
+    const startOfWarningDate = new Date(warningDate.toISOString().split('T')[0]);
+    console.log("Warning date:", startOfWarningDate);
     
     const clientsToWarn = await Client.find({
-      endDate: warningDateStr,
+      endDate: {
+        $gte: currentDate.toISOString(),
+        $lte: warningDate.toISOString()
+      },
       isActive: true
     });
 
     console.log("Found clients to warn:", clientsToWarn.length);
+    console.log("Clients:", clientsToWarn);
 
     // Отправляем предупреждения через телеграм бот
     for (const client of clientsToWarn) {
       try {
+        console.log(`Sending warning to client ${client.tgId}`);
         await bot.api.sendMessage(
           client.tgId,
-          `⚠️ Внимание! Ваш абонемент закончится через 3 дня.\nОсталось тренировок: ${client.remainingTrainings}`
+          `⚠️ Внимание! Ваш абонемент закончится ${new Date(client.endDate).toLocaleDateString()}.\nОсталось тренировок: ${client.remainingTrainings}`
         );
       } catch (error) {
         if (error instanceof GrammyError) {
@@ -248,7 +254,7 @@ const checkSubscriptionStatus = async () => {
       }
     }
 
-    console.log(`Updated ${expiredClients.modifiedCount} expired subscriptions`);
+    console.log(`Updated ${expiredClients?.modifiedCount || 0} expired subscriptions`);
   } catch (error) {
     console.error('Error checking subscription status:', error);
   }
