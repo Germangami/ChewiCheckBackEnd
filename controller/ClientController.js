@@ -87,7 +87,15 @@ class ClientController {
 
     async updateClientAboniment(req, res) {
         const { _id, aboniment } = req.body;
-    
+
+        if (!_id || !aboniment) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        if (![200, 300].includes(aboniment)) {
+            return res.status(400).json({ error: 'Invalid aboniment value' });
+        }
+
         try {
             const currentClient = await Client.findById(_id);
     
