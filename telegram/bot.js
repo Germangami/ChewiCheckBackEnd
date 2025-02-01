@@ -14,16 +14,29 @@ bot.command('start', async (ctx) => {
     console.log(ctx.match, 'COMMAND START');
   
     if (ctx.match) {
-        const trainer = ctx.match;
-        console.log(trainer, 'TRAINER 1');
-  
+        const params = ctx.match.split('_');
+        const clientType = params[0]; // 'group' или 'individual'
+        const trainer = params[1];
+        
         const clientData = {
             tgId: ctx.from.id,
             trainerId,
-            first_name: ctx.from.first_name ? ctx.from.first_name : '',
-            last_name: ctx.from.last_name ? ctx.from.last_name : '',
-            username: ctx.from.username ? ctx.from.username : '',
-            role: 'Client'
+            first_name: ctx.from.first_name || '',
+            last_name: ctx.from.last_name || '',
+            username: ctx.from.username || '',
+            role: 'client',
+            clientType,
+            ...(clientType === 'group' ? {
+                groupTraining: {
+                    isActive: false,
+                    remainingTrainings: 0,
+                    totalTrainings: 0
+                }
+            } : {
+                individualTraining: {
+                    scheduledSessions: []
+                }
+            })
         }
   
         const response = await fetch(`https://chewi-check.com/client/create`, {
@@ -66,14 +79,19 @@ bot.command('start', async (ctx) => {
       .row()
       .webApp('Local', {url: `https://e869-93-105-176-50.ngrok-free.app`})
       .row()
+      .url('Add Group Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=group_${trainerId}&text=Join group training!`)
+      .row()
+      .url('Add Individual Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=individual_${trainerId}&text=Join individual training!`)
+      .row()
       .url('add new Coach', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=${adminId}&text=hi!`)
       .row()
-      .url('add new Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=${adminId}&text=hi!`)
   
   const inlineKeyboardForCoach = new InlineKeyboard()
       .webApp('Open', {url: `${WEBAPP_URL}`})
       .row()
-      .url('add new Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=${trainerId}&text=hi!`)
+      .url('Add Group Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=group_${trainerId}&text=Join group training!`)
+      .row()
+      .url('Add Individual Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=individual_${trainerId}&text=Join individual training!`)
   
   const inlineKeyboardForClient = new InlineKeyboard()
       .webApp('Open', {url: `${WEBAPP_URL}`})

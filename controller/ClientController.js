@@ -4,7 +4,16 @@ import { io } from '../index.js';
 class ClientController {
     async createClient(req, res) {
         try {
-            const { tgId, trainerId, first_name, last_name, username, nickName, role } = req.body;
+            const { 
+                tgId, 
+                trainerId,
+                first_name = '',
+                last_name = '',
+                username = '',
+                nickName = '',
+                role = 'client',
+                clientType = 'group'
+            } = req.body;
 
             const existingClient = await Client.findOne({ tgId });
 
@@ -12,7 +21,28 @@ class ClientController {
                 return res.status(409).json({ error: 'Client already exists' });
             }
             
-            const newClient = await Client.create({ tgId, trainerId, first_name, last_name, username, nickName, role });
+            const newClient = await Client.create({ 
+                tgId, 
+                trainerId, 
+                first_name, 
+                last_name, 
+                username,
+                nickName,
+                role,
+                clientType,
+                ...(clientType === 'group' ? {
+                    groupTraining: {
+                        isActive: false,
+                        remainingTrainings: 0,
+                        totalTrainings: 0
+                    }
+                } : {
+                    individualTraining: {
+                        scheduledSessions: []
+                    }
+                })
+            });
+
             io.emit('clientUpdated', newClient);
             res.json(newClient);
         } catch (error) {
@@ -54,30 +84,34 @@ class ClientController {
         }
     }
 
-    async updateClientTrainings(req, res) {
+    async updateGroupTraining(req, res) {
         const { _id } = req.body;
         const today = new Date().toISOString().slice(0, 10);
 
         try {
             const currentClient = await Client.findById(_id);
 
-            if (!currentClient) {
-                return res.status(404).json({ error: 'Client not found' });
+            if (!currentClient || currentClient.clientType !== 'group') {
+                return res.status(404).json({ error: 'Group client not found' });
             }
 
-            if (currentClient.lastTrainingDate === today) {
-                return res.status(400).json({ error: 'You have already marked attendance for today' });
+            if (currentClient.groupTraining.lastTrainingDate === today) {
+                return res.status(400).json({ error: 'Already marked attendance for today' });
             }
 
-            if (currentClient.remainingTrainings > 0) {
-                currentClient.remainingTrainings -= 1;
-                currentClient.lastTrainingDate = today;
+            if (currentClient.groupTraining.remainingTrainings > 0) {
+                currentClient.groupTraining.remainingTrainings -= 1;
+                currentClient.groupTraining.lastTrainingDate = today;
+                
+                if (currentClient.groupTraining.remainingTrainings === 0) {
+                    currentClient.groupTraining.isActive = false;
+                }
+
                 await currentClient.save();
-
                 io.emit('clientUpdated', currentClient);
                 return res.status(200).json(currentClient);
             } else {
-                return res.status(400).json({ error: 'No remaining trainings to mark' });
+                return res.status(400).json({ error: 'No remaining trainings' });
             }
         } catch(error) {
             console.error(error);
@@ -85,51 +119,69 @@ class ClientController {
         }
     }
 
-    async updateClientAboniment(req, res) {
-        const { _id, aboniment } = req.body;
-
-        if (!_id || !aboniment) {
-            return res.status(400).json({ error: 'Missing required fields' });
-        }
-
-        if (![200, 300].includes(aboniment)) {
-            return res.status(400).json({ error: 'Invalid aboniment value' });
-        }
+    async updateIndividualTraining(req, res) {
+        const { _id, sessionId, status } = req.body;
 
         try {
             const currentClient = await Client.findById(_id);
-    
+
+            if (!currentClient || currentClient.clientType !== 'individual') {
+                return res.status(404).json({ error: 'Individual client not found' });
+            }
+
+            // Находим конкретную тренировку по ID и обновляем её статус
+            const sessionIndex = currentClient.individualTraining.scheduledSessions
+                .findIndex(session => session._id.toString() === sessionId);
+
+            if (sessionIndex === -1) {
+                return res.status(404).json({ error: 'Training session not found' });
+            }
+
+            currentClient.individualTraining.scheduledSessions[sessionIndex].status = status;
+            await currentClient.save();
+
+            io.emit('clientUpdated', currentClient);
+            return res.status(200).json(currentClient);
+        } catch(error) {
+            console.error(error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    }
+
+    async updateClientAboniment(req, res) {
+        try {
+            const { aboniment, _id } = req.body;
+            const currentClient = await Client.findOne({ _id });
+
             if (!currentClient) {
                 return res.status(404).json({ error: 'Client not found' });
             }
-    
+
+            // Определяем количество тренировок на основе абонемента
             let totalTrainings = 0;
-            let remainingTrainings = 0;
-    
             if (aboniment === 200) {
-                totalTrainings = 8;
+                totalTrainings = 8;  // 2 тренировки в неделю * 4 недели
             } else if (aboniment === 300) {
-                totalTrainings = 12;
+                totalTrainings = 12; // 3 тренировки в неделю * 4 недели
             } else {
                 return res.status(400).json({ error: 'Invalid aboniment value' });
             }
-    
-            remainingTrainings = totalTrainings;
-    
+
             const currentDate = new Date();
-    
             const endDate = new Date();
             endDate.setMonth(currentDate.getMonth() + 1);
-    
-            currentClient.aboniment = aboniment;
-            currentClient.totalTrainings = totalTrainings;
-            currentClient.remainingTrainings = remainingTrainings;
-            currentClient.startDate = currentDate.toISOString();
-            currentClient.endDate = endDate.toISOString();
-            currentClient.isActive = true;
-    
-            const updatedClient = await currentClient.save();
 
+            // Обновляем поля в groupTraining
+            currentClient.groupTraining = {
+                aboniment,
+                totalTrainings,
+                remainingTrainings: totalTrainings,
+                startDate: currentDate.toISOString(),
+                endDate: endDate.toISOString(),
+                isActive: true
+            };
+
+            const updatedClient = await currentClient.save();
             io.emit('clientUpdated', updatedClient);
             res.status(200).json(updatedClient);
         } catch (error) {
