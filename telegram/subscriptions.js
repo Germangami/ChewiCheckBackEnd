@@ -92,7 +92,7 @@ const checkSubscriptionStatus = async () => {
 const startSubscriptionCheck = () => {
     console.log('Планировщик проверки подписок запущен');
     // Временно для тестирования - проверка каждую минуту
-    schedule.scheduleJob('* * * * *', checkSubscriptionStatus);
+    schedule.scheduleJob('0 10 * * *', checkSubscriptionStatus);
     // После тестирования вернуть обратно на '0 10 * * *'
 };
 
