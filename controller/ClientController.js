@@ -129,7 +129,7 @@ class ClientController {
                 return res.status(404).json({ error: 'Individual client not found' });
             }
 
-            // Находим конкретную тренировку по ID и обновляем её статус
+            // Находим конкретную тренировку по ID и обновляем только статус
             const sessionIndex = currentClient.individualTraining.scheduledSessions
                 .findIndex(session => session._id.toString() === sessionId);
 
@@ -137,6 +137,7 @@ class ClientController {
                 return res.status(404).json({ error: 'Training session not found' });
             }
 
+            // Обновляем только статус, так как note больше нет
             currentClient.individualTraining.scheduledSessions[sessionIndex].status = status;
             await currentClient.save();
 
@@ -214,6 +215,32 @@ class ClientController {
         } catch (error) {
             console.error('Error fetching clients:', error.message);
             res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    async scheduleIndividualTraining(req, res) {
+        const { _id, date, time } = req.body;
+
+        try {
+            const currentClient = await Client.findById(_id);
+
+            if (!currentClient || currentClient.clientType !== 'individual') {
+                return res.status(404).json({ error: 'Individual client not found' });
+            }
+
+            // Добавляем новую запланированную тренировку
+            currentClient.individualTraining.scheduledSessions.push({
+                date,
+                time,
+                status: 'planned'
+            });
+
+            await currentClient.save();
+            io.emit('clientUpdated', currentClient);
+            return res.status(200).json(currentClient);
+        } catch(error) {
+            console.error(error);
+            res.status(500).json({ error: 'Server error' });
         }
     }
 }

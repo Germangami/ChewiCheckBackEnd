@@ -13,4 +13,6 @@ clientRouter.put('/updateIndividualTraining', ClientController.updateIndividualT
 clientRouter.get('/getClients', ClientController.getAllClients);
 clientRouter.get('/getCurrentClient/:tgId', ClientController.getCurrentClient);
 
+clientRouter.post('/scheduleIndividualTraining', ClientController.scheduleIndividualTraining);
+
 export default clientRouter;

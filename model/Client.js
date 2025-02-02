@@ -36,21 +36,13 @@ const clientSchema = new mongoose.Schema({
             status: {
                 type: String,
                 enum: ['planned', 'completed', 'missed']
-            },
-            note: {type: String}
+            }
         }],
         pricePerSession: {type: Number},
         preferredDays: {type: [String]},
         preferredTime: {type: String}
     },
-
-    startDate: {type: String, required: false},
-    endDate: {type: String, required: false},
-    totalTrainings: { type: Number, required: false },
-    remainingTrainings: { type: Number, required: false },
-    aboniment: {type: Number, required: false},
     lastTrainingDate: { type: String, required: false },
-    isActive: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export default mongoose.model('Client', clientSchema);
