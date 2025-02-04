@@ -1,7 +1,7 @@
-// import schedule from 'node-schedule';
-// import Client from '../model/Client.js';
-// import { bot, adminId } from './bot.js';
-// import { io } from '../index.js';
+import schedule from 'node-schedule';
+import Client from '../model/Client.js';
+import { bot, adminId } from './bot.js';
+import { io } from '../index.js';
 
 // // Вспомогательная функция для склонения слова "день"
 // function getDaysWord(days) {
