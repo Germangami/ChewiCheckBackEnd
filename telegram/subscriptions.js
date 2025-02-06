@@ -85,6 +85,7 @@ async function handleExpiredSubscription(client) {
                 $set: {
                     'groupTraining.isActive': false,
                     'groupTraining.remainingTrainings': 0,
+                    'groupTraining.totalTrainings': 0,
                     'groupTraining.aboniment': null,
                     'groupTraining.startDate': null,
                     'groupTraining.endDate': null
@@ -114,10 +115,8 @@ async function sendExpirationWarning(client, daysLeft) {
 // Запускаем проверку каждый день в 10:00
 const startSubscriptionCheck = () => {
     console.log('Планировщик проверки подписок запущен');
-    // Временно для тестирования - проверка каждую минуту
-    // schedule.scheduleJob('0 10 * * *', checkSubscriptionStatus);
-    schedule.scheduleJob('*/2 * * * *', checkSubscriptionStatus);
-    // После тестирования вернуть обратно на '0 10 * * *'
+    schedule.scheduleJob('0 10 * * *', checkSubscriptionStatus);
+    // schedule.scheduleJob('*/2 * * * *', checkSubscriptionStatus);
 };
 
 export { checkSubscriptionStatus, startSubscriptionCheck };
