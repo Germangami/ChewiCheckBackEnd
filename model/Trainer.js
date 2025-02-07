@@ -47,22 +47,17 @@ const trainerSchema = new mongoose.Schema({
 
 // Метод для проверки доступности временного слота
 trainerSchema.methods.isTimeSlotAvailable = function(date, startTime) {
-    const requestedDate = new Date(date);
-    
-    return !this.bookedSlots.some(slot => {
-        const slotDate = new Date(slot.date);
-        return (
-            slotDate.getDate() === requestedDate.getDate() &&
-            slotDate.getMonth() === requestedDate.getMonth() &&
-            slotDate.getFullYear() === requestedDate.getFullYear() &&
-            slot.startTime === startTime
-        );
-    });
+    // date приходит в формате DD.MM.YYYY
+    return !this.bookedSlots.some(slot => 
+        slot.date === date && slot.startTime === startTime
+    );
 };
 
 // Метод для получения всех доступных слотов на определенную дату
 trainerSchema.methods.getAvailableSlots = function(date) {
-    const requestedDate = new Date(date);
+    // Преобразуем DD.MM.YYYY в объект Date для получения дня недели
+    const [day, month, year] = date.split('.');
+    const requestedDate = new Date(year, month - 1, day);
     const workDay = requestedDate.toLocaleDateString('en-US', { weekday: 'long' });
     
     // Проверяем, является ли день рабочим

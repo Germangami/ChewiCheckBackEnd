@@ -59,8 +59,9 @@ class TrainerController {
     async bookTimeSlot(req, res) {
         try {
             const { trainerId, clientId, date, startTime, duration = 60 } = req.body;
-            const trainer = await Trainer.findOne({ tgId: trainerId });
+            console.log('Received booking request:', req.body);
 
+            const trainer = await Trainer.findOne({ tgId: trainerId });
             if (!trainer) {
                 return res.status(404).json({ error: 'Trainer not found' });
             }
@@ -70,9 +71,9 @@ class TrainerController {
                 return res.status(400).json({ error: 'Time slot is not available' });
             }
 
-            // Добавляем бронирование
+            // Добавляем бронирование в формате DD.MM.YYYY
             trainer.bookedSlots.push({
-                date: new Date(date),
+                date, // Уже в формате DD.MM.YYYY
                 startTime,
                 duration,
                 clientId
@@ -82,8 +83,8 @@ class TrainerController {
             io.emit('trainerScheduleUpdated', trainer);
             res.json({ message: 'Time slot booked successfully', trainer });
         } catch (error) {
-            console.error('Error booking time slot:', error.message);
-            res.status(500).json({ error: 'Internal server error' });
+            console.error('Error booking time slot:', error);
+            res.status(500).json({ error: 'Internal server error', details: error.message });
         }
     }
 
