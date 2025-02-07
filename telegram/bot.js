@@ -1,6 +1,7 @@
 import { Bot, InlineKeyboard, GrammyError, HttpError } from "grammy";
 import { checkSubscriptionStatus } from './subscriptions.js';
 import dotenv from 'dotenv';
+import io from 'socket.io-client';
 dotenv.config();
 
 //BOTSETTINGS
@@ -152,5 +153,44 @@ bot.command('start', async (ctx) => {
       console.error('Error in test check:', error);
     }
   };
+
+  // В существующем боте обновляем обработку команды для добавления тренера
+  bot.command('addtrainer', async (ctx) => {
+    if (ctx.from.id === adminId) {
+        const trainerData = {
+            tgId: ctx.message.reply_to_message?.from.id, // ID пользователя, на чье сообщение ответили
+            first_name: ctx.message.reply_to_message?.from.first_name || '',
+            last_name: ctx.message.reply_to_message?.from.last_name || '',
+            username: ctx.message.reply_to_message?.from.username || '',
+            workSchedule: {
+                workDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                workHours: { start: '09:00', end: '20:00' }
+            }
+        };
+
+        try {
+            const response = await fetch(`${WEBAPP_URL}/trainer/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(trainerData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            ctx.reply(`Trainer ${data.first_name} created successfully!`);
+            io.emit('trainerAdded', data);
+        } catch (error) {
+            console.error('Error creating trainer:', error);
+            ctx.reply('Error creating trainer. Please try again.');
+        }
+    } else {
+        ctx.reply('Sorry, only admin can add trainers.');
+    }
+  });
 
   export { bot, adminId, trainerId };

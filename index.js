@@ -1,7 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import router from './router.js';
 import clientRouter from './router/client-router.js';
+import trainerRouter from './router/trainer-router.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Server } from 'socket.io';
@@ -39,8 +39,8 @@ const io = new Server(server, {
 // Middleware
 app.use(express.json());
 app.use(cors());
-app.use('/api', router);
 app.use('/client', clientRouter);
+app.use('/trainer', trainerRouter);
 
 // MongoDB подключение
 const connectDB = async () => {
@@ -58,9 +58,22 @@ io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
   console.log(`Transport: ${socket.conn.transport.name}`);
 
+  // Обработка обновлений клиента
   socket.on('updateClient', (data) => {
     console.log('Client updated:', data);
-    io.emit('clientUpdated', data); // Широковещательная рассылка обновления
+    io.emit('clientUpdated', data);
+  });
+
+  // Обработка обновлений тренера
+  socket.on('updateTrainer', (data) => {
+    console.log('Trainer updated:', data);
+    io.emit('trainerUpdated', data);
+  });
+
+  // Обработка обновлений расписания
+  socket.on('scheduleUpdated', (data) => {
+    console.log('Schedule updated:', data);
+    io.emit('scheduleUpdated', data);
   });
 
   socket.on('disconnect', () => {
