@@ -16,9 +16,44 @@ bot.command('start', async (ctx) => {
   
     if (ctx.match) {
         const params = ctx.match.split('_');
-        const clientType = params[0]; // 'group' или 'individual'
-        const trainer = params[1];
-        
+        const type = params[0]; // 'group', 'individual' или 'trainer'
+        const fromId = params[1];
+
+        if (type === 'trainer') {
+            const trainerData = {
+                tgId: ctx.from.id,
+                first_name: ctx.from.first_name || '',
+                last_name: ctx.from.last_name || '',
+                username: ctx.from.username || '',
+                role: 'trainer'
+            };
+
+            try {
+                const response = await fetch(`${WEBAPP_URL}/trainer/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(trainerData)
+                });
+
+                if (!response.ok) {
+                    ctx.reply('Trainer already exists!');
+                    return;
+                }
+
+                const data = await response.json();
+                await ctx.reply(`✅ You have been successfully added as a trainer!`, {
+                    reply_markup: inlineKeyboardForCoach,
+                });
+            } catch (error) {
+                console.error('Error creating trainer:', error);
+                ctx.reply('Error creating trainer. Please try again.');
+            }
+            return;
+        }
+
+        // Существующая логика для клиентов
         const clientData = {
             tgId: ctx.from.id,
             trainerId,
@@ -26,8 +61,8 @@ bot.command('start', async (ctx) => {
             last_name: ctx.from.last_name || '',
             username: ctx.from.username || '',
             role: 'client',
-            clientType,
-            ...(clientType === 'group' ? {
+            clientType: type,
+            ...(type === 'group' ? {
                 groupTraining: {
                     isActive: false,
                     remainingTrainings: 0,
@@ -84,8 +119,7 @@ bot.command('start', async (ctx) => {
       .row()
       .url('Add Individual Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=individual_${adminId}&text=Join individual training!`)
       .row()
-      .url('add new Coach', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=${adminId}&text=hi!`)
-      .row()
+      .url('Add Trainer', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=trainer_${adminId}&text=Become a trainer!`)
   
   const inlineKeyboardForCoach = new InlineKeyboard()
       .webApp('Open', {url: `${WEBAPP_URL}`})
@@ -113,83 +147,12 @@ bot.command('start', async (ctx) => {
   
   // Добавляем тестовую команду для бота
   bot.command("checkSubscriptions", async (ctx) => {
-    if (ctx.from.id === adminId || ctx.from.id === trainerId) { // Проверяем, что команду вызывает админ
+    if (ctx.from.id === adminId || ctx.from.id === trainerId) {
         await ctx.reply("Запуск проверки подписок...");
         await checkSubscriptionStatus();
         await ctx.reply("Проверка подписок завершена!");
     } else {
         await ctx.reply("Извините, эта команда только для администраторов.");
-    }
-  });
-  
-  const checkTrainingsData = async () => {
-    try {
-      const currentDate = new Date();
-      console.log("Current date:", currentDate);
-      
-      // Находим всех активных клиентов
-      const activeClients = await Client.find({ isActive: true });
-      console.log("Found active clients:", activeClients.length);
-  
-      // Выводим информацию о каждом клиенте для отладки
-      for (const client of activeClients) {
-        console.log(`\nChecking client: ${client.tgId}`);
-        console.log(`End date: ${client.endDate}`);
-        console.log(`Remaining trainings: ${client.remainingTrainings}`);
-        
-        try {
-          // Отправляем тестовое сообщение каждому активному клиенту
-          await bot.api.sendMessage(
-            client.tgId,
-            `🔍 Тестовое уведомление:\nДата окончания: ${client.endDate}\nОсталось тренировок: ${client.remainingTrainings}`
-          );
-          console.log(`Successfully sent message to ${client.tgId}`);
-        } catch (error) {
-          console.error(`Failed to send message to ${client.tgId}:`, error);
-        }
-      }
-  
-    } catch (error) {
-      console.error('Error in test check:', error);
-    }
-  };
-
-  // В существующем боте обновляем обработку команды для добавления тренера
-  bot.command('addtrainer', async (ctx) => {
-    if (ctx.from.id === adminId) {
-        const trainerData = {
-            tgId: ctx.message.reply_to_message?.from.id,
-            first_name: ctx.message.reply_to_message?.from.first_name || '',
-            last_name: ctx.message.reply_to_message?.from.last_name || '',
-            username: ctx.message.reply_to_message?.from.username || '',
-            workSchedule: {
-                workDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-                workHours: { start: '09:00', end: '20:00' }
-            }
-        };
-
-        try {
-            const response = await fetch(`${WEBAPP_URL}/trainer/create`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(trainerData)
-            });
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            ctx.reply(`Trainer ${data.first_name} created successfully!`);
-            io.emit('trainerAdded', data);
-        } catch (error) {
-            console.error('Error creating trainer:', error);
-            ctx.reply('Error creating trainer. Please try again.');
-        }
-    } else {
-        ctx.reply('Sorry, only admin can add trainers.');
     }
   });
 
