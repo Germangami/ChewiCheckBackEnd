@@ -24,10 +24,22 @@ const trainerSchema = new mongoose.Schema({
 
     // Забронированные слоты
     bookedSlots: [{
-        date: { type: Date, required: true },
-        startTime: { type: String, required: true },
-        duration: { type: Number, default: 60 }, // длительность в минутах
-        clientId: { type: Number, required: true } // tgId клиента
+        date: { 
+            type: String,  // Изменим на String
+            required: true 
+        },
+        startTime: { 
+            type: String, 
+            required: true 
+        },
+        duration: { 
+            type: Number, 
+            default: 60 
+        },
+        clientId: { 
+            type: Number, 
+            required: true 
+        }
     }],
 
     isActive: { type: Boolean, default: true }
