@@ -1,7 +1,7 @@
 import { Bot, InlineKeyboard, GrammyError, HttpError } from "grammy";
 import { checkSubscriptionStatus } from './subscriptions.js';
+import { io } from '../index.js';
 import dotenv from 'dotenv';
-import io from 'socket.io-client';
 dotenv.config();
 
 //BOTSETTINGS
@@ -158,7 +158,7 @@ bot.command('start', async (ctx) => {
   bot.command('addtrainer', async (ctx) => {
     if (ctx.from.id === adminId) {
         const trainerData = {
-            tgId: ctx.message.reply_to_message?.from.id, // ID пользователя, на чье сообщение ответили
+            tgId: ctx.message.reply_to_message?.from.id,
             first_name: ctx.message.reply_to_message?.from.first_name || '',
             last_name: ctx.message.reply_to_message?.from.last_name || '',
             username: ctx.message.reply_to_message?.from.username || '',
