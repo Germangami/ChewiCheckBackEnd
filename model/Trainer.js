@@ -54,30 +54,38 @@ trainerSchema.methods.isTimeSlotAvailable = function(date, startTime) {
 };
 
 // Метод для получения всех доступных слотов на определенную дату
-trainerSchema.methods.getAvailableSlots = function(date) {
-    // Преобразуем DD.MM.YYYY в объект Date для получения дня недели
-    const [day, month, year] = date.split('.');
-    const requestedDate = new Date(year, month - 1, day);
-    const workDay = requestedDate.toLocaleDateString('en-US', { weekday: 'long' });
-    
-    // Проверяем, является ли день рабочим
-    if (!this.workSchedule.workDays.includes(workDay)) {
-        return [];
-    }
+trainerSchema.methods.getAvailableSlots = function(dateStr) {
+    try {
+        // Проверяем формат даты
+        console.log('Processing date:', dateStr); // Для дебага
 
-    // Генерируем все возможные слоты для этого дня
-    const slots = [];
-    const [startHour] = this.workSchedule.workHours.start.split(':');
-    const [endHour] = this.workSchedule.workHours.end.split(':');
-
-    for (let hour = parseInt(startHour); hour < parseInt(endHour); hour++) {
-        const time = `${hour.toString().padStart(2, '0')}:00`;
-        if (this.isTimeSlotAvailable(date, time)) {
-            slots.push(time);
+        // Получаем день недели
+        const [day, month, year] = dateStr.split('.');
+        const requestedDate = new Date(year, month - 1, day);
+        const workDay = requestedDate.toLocaleDateString('en-US', { weekday: 'long' });
+        
+        // Проверяем, является ли день рабочим
+        if (!this.workSchedule.workDays.includes(workDay)) {
+            return [];
         }
-    }
 
-    return slots;
+        // Генерируем все возможные слоты для этого дня
+        const slots = [];
+        const [startHour] = this.workSchedule.workHours.start.split(':');
+        const [endHour] = this.workSchedule.workHours.end.split(':');
+
+        for (let hour = parseInt(startHour); hour < parseInt(endHour); hour++) {
+            const time = `${hour.toString().padStart(2, '0')}:00`;
+            if (this.isTimeSlotAvailable(dateStr, time)) {
+                slots.push(time);
+            }
+        }
+
+        return slots;
+    } catch (error) {
+        console.error('Error in getAvailableSlots:', error);
+        throw error;
+    }
 };
 
 export default mongoose.model('Trainer', trainerSchema);

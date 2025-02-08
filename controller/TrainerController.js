@@ -47,8 +47,14 @@ class TrainerController {
                 return res.status(404).json({ error: 'Trainer not found' });
             }
 
-            const availableSlots = trainer.getAvailableSlots(new Date(date));
-            res.json({ availableSlots });
+            // Проверяем формат даты
+            console.log('Received date:', date); // Для дебага
+
+            // Получаем слоты
+            const availableSlots = trainer.getAvailableSlots(date);
+            
+            // Возвращаем слоты
+            res.json(availableSlots);
         } catch (error) {
             console.error('Error getting available slots:', error.message);
             res.status(500).json({ error: 'Internal server error' });
