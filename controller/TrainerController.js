@@ -41,23 +41,32 @@ class TrainerController {
     async getAvailableSlots(req, res) {
         try {
             const { trainerId, date } = req.params;
+            console.log('Request params:', { trainerId, date });
+            console.log('Request params types:', { 
+                trainerId: typeof trainerId, 
+                date: typeof date 
+            });
+
             const trainer = await Trainer.findOne({ tgId: trainerId });
+            console.log('Found trainer:', trainer ? 'yes' : 'no');
 
             if (!trainer) {
                 return res.status(404).json({ error: 'Trainer not found' });
             }
 
             // Проверяем формат даты
-            console.log('Received date:', date); // Для дебага
+            console.log('Processing date before getAvailableSlots:', date);
 
             // Получаем слоты
             const availableSlots = trainer.getAvailableSlots(date);
+            console.log('Available slots:', availableSlots);
             
             // Возвращаем слоты
             res.json(availableSlots);
         } catch (error) {
+            console.error('Full error:', error);
             console.error('Error getting available slots:', error.message);
-            res.status(500).json({ error: 'Internal server error' });
+            res.status(500).json({ error: error.message || 'Internal server error' });
         }
     }
 
