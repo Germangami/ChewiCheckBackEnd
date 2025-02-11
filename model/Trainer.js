@@ -25,7 +25,7 @@ const trainerSchema = new mongoose.Schema({
     // Забронированные слоты
     bookedSlots: [{
         date: { 
-            type: String,  // Изменим на String
+            type: String,
             required: true 
         },
         startTime: { 
@@ -36,9 +36,19 @@ const trainerSchema = new mongoose.Schema({
             type: Number, 
             default: 60 
         },
-        clientId: { 
-            type: Number, 
-            required: true 
+        client: {
+            tgId: { 
+                type: Number, 
+                required: true 
+            },
+            first_name: { 
+                type: String, 
+                required: true 
+            },
+            nickname: { 
+                type: String,
+                required: false
+            }
         }
     }],
 

@@ -1,5 +1,6 @@
 import Trainer from '../model/Trainer.js';
 import { io } from '../index.js';
+import TelegramService from '../services/TelegramService.js';
 
 class TrainerController {
     // Создание тренера
@@ -73,7 +74,7 @@ class TrainerController {
     // Бронирование слота
     async bookTimeSlot(req, res) {
         try {
-            const { trainerId, clientId, date, startTime, duration = 60 } = req.body;
+            const { trainerId, client, date, startTime, duration = 60 } = req.body;
             console.log('Received booking request:', req.body);
 
             const trainer = await Trainer.findOne({ tgId: trainerId });
@@ -86,37 +87,50 @@ class TrainerController {
                 return res.status(400).json({ error: 'Time slot is not available' });
             }
 
-            // Добавляем бронирование в формате DD.MM.YYYY
+            // Добавляем бронирование с новой структурой client
             trainer.bookedSlots.push({
-                date, // Уже в формате DD.MM.YYYY
+                date,
                 startTime,
                 duration,
-                clientId
+                client: {
+                    tgId: client.tgId,
+                    first_name: client.first_name,
+                    nickname: client.nickname || ''
+                }
             });
 
             await trainer.save();
+            
+            // Отправляем уведомления
+            await TelegramService.sendBookingNotification(
+                trainer,
+                client,
+                date,
+                startTime
+            );
+
             io.emit('trainerScheduleUpdated', trainer);
             res.json({ message: 'Time slot booked successfully', trainer });
         } catch (error) {
             console.error('Error booking time slot:', error);
-            res.status(500).json({ error: 'Internal server error', details: error.message });
+            res.status(500).json({ error: 'Internal server error' });
         }
     }
 
     // Отмена бронирования
     async cancelBooking(req, res) {
         try {
-            const { trainerId, clientId, date, startTime } = req.body;
+            const { trainerId, client, date, startTime } = req.body;
             const trainer = await Trainer.findOne({ tgId: trainerId });
 
             if (!trainer) {
                 return res.status(404).json({ error: 'Trainer not found' });
             }
 
-            // Находим и удаляем бронирование
+            // Находим и удаляем бронирование по tgId клиента
             const bookingIndex = trainer.bookedSlots.findIndex(slot => 
-                slot.clientId === clientId && 
-                new Date(slot.date).toISOString() === new Date(date).toISOString() && 
+                slot.client.tgId === client.tgId && 
+                slot.date === date && 
                 slot.startTime === startTime
             );
 
@@ -127,10 +141,18 @@ class TrainerController {
             trainer.bookedSlots.splice(bookingIndex, 1);
             await trainer.save();
             
+            // Отправляем уведомления об отмене
+            await TelegramService.sendCancelNotification(
+                trainer,
+                client,
+                date,
+                startTime
+            );
+
             io.emit('trainerScheduleUpdated', trainer);
             res.json({ message: 'Booking cancelled successfully', trainer });
         } catch (error) {
-            console.error('Error cancelling booking:', error.message);
+            console.error('Error cancelling booking:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }
