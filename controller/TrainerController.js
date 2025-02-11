@@ -77,6 +77,10 @@ class TrainerController {
             const { trainerId, client, date, startTime, duration = 60 } = req.body;
             console.log('Received booking request:', req.body);
 
+            if (!client || !client.tgId || !client.first_name) {
+                return res.status(400).json({ error: 'Invalid client data' });
+            }
+
             const trainer = await Trainer.findOne({ tgId: trainerId });
             if (!trainer) {
                 return res.status(404).json({ error: 'Trainer not found' });
@@ -102,12 +106,7 @@ class TrainerController {
             await trainer.save();
             
             // Отправляем уведомления
-            await TelegramService.sendBookingNotification(
-                trainer,
-                client,
-                date,
-                startTime
-            );
+            await TelegramService.sendBookingNotification(trainer, client, date, startTime);
 
             io.emit('trainerScheduleUpdated', trainer);
             res.json({ message: 'Time slot booked successfully', trainer });

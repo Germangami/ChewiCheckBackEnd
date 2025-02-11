@@ -1,6 +1,6 @@
-import TelegramBot from 'node-telegram-bot-api';
+import { Bot, InlineKeyboard, GrammyError, HttpError } from "grammy";
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN);
 
 class TelegramService {
     async sendBookingNotification(trainer, client, date, time) {
@@ -12,8 +12,8 @@ class TelegramService {
 
         try {
             // Отправляем уведомления
-            await bot.sendMessage(trainer.tgId, trainerMessage);
-            await bot.sendMessage(client.tgId, clientMessage);
+            await bot.reply(trainer.tgId, trainerMessage);
+            await bot.reply(client.tgId, clientMessage);
         } catch (error) {
             console.error('Error sending Telegram notification:', error);
         }
@@ -25,8 +25,8 @@ class TelegramService {
         const clientMessage = `❌ Тренировка отменена!\n\nТренер: ${trainer.first_name} ${trainer.last_name ? trainer.last_name : ''}\nДата: ${date}\nВремя: ${time}`;
 
         try {
-            await bot.sendMessage(trainer.tgId, trainerMessage);
-            await bot.sendMessage(client.tgId, clientMessage);
+            await bot.reply(trainer.tgId, trainerMessage);
+            await bot.reply(client.tgId, clientMessage);
         } catch (error) {
             console.error('Error sending cancel notification:', error);
         }

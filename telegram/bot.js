@@ -113,7 +113,7 @@ bot.command('start', async (ctx) => {
   const inlineKeyboardForAdmin = new InlineKeyboard()
       .webApp('Prod', {url: `${WEBAPP_URL}`})
       .row()
-      .webApp('Local', {url: `https://2f2a-93-105-176-50.ngrok-free.app`})
+      .webApp('Local', {url: `https://ede6-93-105-176-50.ngrok-free.app`})
       .row()
       .url('Add Group Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=group_${adminId}&text=Join group training!`)
       .row()
