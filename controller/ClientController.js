@@ -228,9 +228,14 @@ class ClientController {
                 return res.status(404).json({ error: 'Individual client not found' });
             }
 
+            // Преобразуем дату в нужный формат, если она приходит в другом формате
+            const formattedDate = date.includes('T') 
+                ? new Date(date).toLocaleDateString('ru-RU') // из ISO в DD.MM.YYYY
+                : date;
+
             // Добавляем новую запланированную тренировку
             currentClient.individualTraining.scheduledSessions.push({
-                date,
+                date: formattedDate,
                 time,
                 status: 'planned'
             });

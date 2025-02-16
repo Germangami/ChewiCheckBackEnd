@@ -31,16 +31,16 @@ const clientSchema = new mongoose.Schema({
     // Поля для индивидуальных тренировок
     individualTraining: {
         scheduledSessions: [{
-            date: {type: Date},
-            time: {type: String},
+            date: { type: String },
+            time: { type: String },
             status: {
                 type: String,
                 enum: ['planned', 'completed', 'missed']
             }
         }],
-        pricePerSession: {type: Number},
-        preferredDays: {type: [String]},
-        preferredTime: {type: String}
+        pricePerSession: { type: Number },
+        preferredDays: { type: [String] },
+        preferredTime: { type: String }
     },
     lastTrainingDate: { type: String, required: false },
 }, { timestamps: true });
