@@ -130,6 +130,8 @@ bot.command('start', async (ctx) => {
   
   const inlineKeyboardForClient = new InlineKeyboard()
       .webApp('Open', {url: `${WEBAPP_URL}`})
+      .row()
+      .webApp('Local', {url: `https://4e0d-93-105-176-50.ngrok-free.app`})
   
   bot.catch((err) => {
     const ctx = err.ctx;
