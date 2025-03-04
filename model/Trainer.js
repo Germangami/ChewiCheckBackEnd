@@ -66,31 +66,22 @@ trainerSchema.methods.isTimeSlotAvailable = function(date, startTime) {
 // Метод для получения всех доступных слотов на определенную дату
 trainerSchema.methods.getAvailableSlots = function(dateStr) {
     try {
-        console.log('getAvailableSlots input:', dateStr);
-        console.log('getAvailableSlots input type:', typeof dateStr);
-
         if (!dateStr || typeof dateStr !== 'string') {
             throw new Error(`Invalid date format. Expected string, got ${typeof dateStr}`);
         }
 
         // Получаем день недели
         const dateParts = dateStr.split('.');
-        console.log('Date parts:', dateParts);
-
         if (dateParts.length !== 3) {
             throw new Error('Invalid date format. Expected DD.MM.YYYY');
         }
 
         const [day, month, year] = dateParts;
         const requestedDate = new Date(year, month - 1, day);
-        console.log('Requested date:', requestedDate);
-
         const workDay = requestedDate.toLocaleDateString('en-US', { weekday: 'long' });
-        console.log('Work day:', workDay);
         
         // Проверяем, является ли день рабочим
         if (!this.workSchedule.workDays.includes(workDay)) {
-            console.log('Not a work day');
             return [];
         }
 
@@ -101,9 +92,21 @@ trainerSchema.methods.getAvailableSlots = function(dateStr) {
 
         for (let hour = parseInt(startHour); hour < parseInt(endHour); hour++) {
             const time = `${hour.toString().padStart(2, '0')}:00`;
-            if (this.isTimeSlotAvailable(dateStr, time)) {
-                slots.push(time);
-            }
+            const isAvailable = this.isTimeSlotAvailable(dateStr, time);
+            
+            // Проверяем, есть ли перерыв в это время
+            const hasBreak = this.workSchedule.breaks?.some(function(breakTime) {
+                return breakTime.weekDay === workDay && breakTime.time === time;
+            });
+
+            slots.push({
+                date: dateStr,
+                time: time,
+                isAvailable: isAvailable && !hasBreak,
+                unavailableReason: hasBreak ? 'break' : 
+                                 !isAvailable ? 'booked' : 
+                                 undefined
+            });
         }
 
         return slots;
