@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import moment from 'moment';
 
 const trainerSchema = new mongoose.Schema({
     // Основная информация
@@ -19,7 +20,29 @@ const trainerSchema = new mongoose.Schema({
         workHours: {
             start: { type: String, default: '09:00' },
             end: { type: String, default: '20:00' }
-        }
+        },
+        // Регулярные перерывы
+        breaks: [{
+            weekDay: {
+                type: String,
+                enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                required: true
+            },
+            time: {
+                type: String,
+                required: true
+            },
+            duration: {
+                type: Number,
+                required: true,
+                min: 15,
+                max: 240
+            },
+            description: {
+                type: String,
+                default: ''
+            }
+        }]
     },
 
     // Забронированные слоты
@@ -65,55 +88,56 @@ trainerSchema.methods.isTimeSlotAvailable = function(date, startTime) {
 
 // Метод для получения всех доступных слотов на определенную дату
 trainerSchema.methods.getAvailableSlots = function(dateStr) {
-    try {
-        if (!dateStr || typeof dateStr !== 'string') {
-            throw new Error(`Invalid date format. Expected string, got ${typeof dateStr}`);
-        }
-
-        // Получаем день недели
-        const dateParts = dateStr.split('.');
-        if (dateParts.length !== 3) {
-            throw new Error('Invalid date format. Expected DD.MM.YYYY');
-        }
-
-        const [day, month, year] = dateParts;
-        const requestedDate = new Date(year, month - 1, day);
-        const workDay = requestedDate.toLocaleDateString('en-US', { weekday: 'long' });
-        
-        // Проверяем, является ли день рабочим
-        if (!this.workSchedule.workDays.includes(workDay)) {
-            return [];
-        }
-
-        // Генерируем все возможные слоты для этого дня
-        const slots = [];
-        const [startHour] = this.workSchedule.workHours.start.split(':');
-        const [endHour] = this.workSchedule.workHours.end.split(':');
-
-        for (let hour = parseInt(startHour); hour < parseInt(endHour); hour++) {
-            const time = `${hour.toString().padStart(2, '0')}:00`;
-            const isAvailable = this.isTimeSlotAvailable(dateStr, time);
-            
-            // Проверяем, есть ли перерыв в это время
-            const hasBreak = this.workSchedule.breaks?.some(function(breakTime) {
-                return breakTime.weekDay === workDay && breakTime.time === time;
-            });
-
-            slots.push({
-                date: dateStr,
-                time: time,
-                isAvailable: isAvailable && !hasBreak,
-                unavailableReason: hasBreak ? 'break' : 
-                                 !isAvailable ? 'booked' : 
-                                 undefined
-            });
-        }
-
-        return slots;
-    } catch (error) {
-        console.error('Error in getAvailableSlots:', error);
-        throw error;
+    // Проверяем формат даты
+    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) {
+        throw new Error('Invalid date format. Expected DD.MM.YYYY');
     }
+
+    // Парсим дату
+    const [day, month, year] = dateStr.split('.');
+    const date = new Date(year, month - 1, day);
+    const weekDay = date.toLocaleString('en-US', { weekday: 'long' });
+
+    // Проверяем, является ли день рабочим
+    if (!this.workSchedule.workDays.includes(weekDay)) {
+        return [];
+    }
+
+    const slots = [];
+    const { start, end } = this.workSchedule.workHours;
+    let currentTime = moment(start, 'HH:mm');
+    const endTime = moment(end, 'HH:mm');
+
+    // Генерируем слоты с интервалом в 1 час
+    while (currentTime.isBefore(endTime)) {
+        const timeStr = currentTime.format('HH:mm');
+        
+        // Проверяем доступность слота
+        if (this.isTimeSlotAvailable(dateStr, timeStr) && !this.isTimeInBreak(weekDay, timeStr)) {
+            slots.push({
+                time: timeStr,
+                isAvailable: true
+            });
+        }
+        
+        currentTime.add(60, 'minutes');
+    }
+
+    return slots;
+};
+
+trainerSchema.methods.isTimeInBreak = function(weekDay, time) {
+    if (!this.workSchedule.breaks) return false;
+    
+    return this.workSchedule.breaks.some(breakTime => {
+        if (breakTime.weekDay !== weekDay) return false;
+        
+        const breakStart = moment(breakTime.time, 'HH:mm');
+        const breakEnd = moment(breakTime.time, 'HH:mm').add(breakTime.duration, 'minutes');
+        const checkTime = moment(time, 'HH:mm');
+        
+        return checkTime.isBetween(breakStart, breakEnd, null, '[)');
+    });
 };
 
 export default mongoose.model('Trainer', trainerSchema);
