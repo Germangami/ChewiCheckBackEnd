@@ -59,6 +59,11 @@ const trainerSchema = new mongoose.Schema({
             type: Number, 
             default: 60 
         },
+        status: {
+            type: String,
+            enum: ['pending', 'approved', 'rejected'],
+            default: 'pending'
+        },
         client: {
             tgId: { 
                 type: Number, 

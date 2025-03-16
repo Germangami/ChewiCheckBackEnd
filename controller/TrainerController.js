@@ -205,6 +205,46 @@ class TrainerController {
             res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+    // Обновление статуса бронирования (подтверждение/отмена)
+    async updateBookingStatus(req, res) {
+        try {
+            const { trainerId, clientTgId, date, startTime, status } = req.body;
+            
+            const trainer = await Trainer.findOne({ tgId: trainerId });
+            if (!trainer) {
+                return res.status(404).json({ error: 'Trainer not found' });
+            }
+
+            // Находим бронирование
+            const booking = trainer.bookedSlots.find(slot => 
+                slot.client.tgId === clientTgId && 
+                slot.date === date && 
+                slot.startTime === startTime
+            );
+
+            if (!booking) {
+                return res.status(404).json({ error: 'Booking not found' });
+            }
+
+            // Обновляем статус
+            booking.status = status;
+            await trainer.save();
+
+            // Отправляем уведомление клиенту через Telegram
+            if (status === 'approved') {
+                await TelegramService.sendBookingApprovedNotification(trainer, booking.client, date, startTime);
+            } else if (status === 'rejected') {
+                await TelegramService.sendBookingRejectedNotification(trainer, booking.client, date, startTime);
+            }
+
+            io.emit('trainerScheduleUpdated', trainer);
+            res.json({ message: 'Booking status updated successfully', trainer });
+        } catch (error) {
+            console.error('Error updating booking status:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
 }
 
 export default new TrainerController();
