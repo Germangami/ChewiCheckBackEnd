@@ -8,6 +8,7 @@ dotenv.config();
 const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN);
 const trainerId = 6448727138;
 const WEBAPP_URL = 'https://chewi-check.com';
+const WEBAPP_URL_LOCAL = 'https://3bd3-93-105-176-50.ngrok-free.app';
 const adminId = 469408413;
 
 //КОД БОТА
@@ -113,7 +114,7 @@ bot.command('start', async (ctx) => {
   const inlineKeyboardForAdmin = new InlineKeyboard()
       .webApp('Prod', {url: `${WEBAPP_URL}`})
       .row()
-      .webApp('Local', {url: `https://4e0d-93-105-176-50.ngrok-free.app`})
+      .webApp('Local', {url: `${WEBAPP_URL_LOCAL}`})
       .row()
       .url('Add Group Client', `https://t.me/share/url?url=https://t.me/ChewiCheckBot?start=group_${adminId}&text=Join group training!`)
       .row()
@@ -131,7 +132,7 @@ bot.command('start', async (ctx) => {
   const inlineKeyboardForClient = new InlineKeyboard()
       .webApp('Open', {url: `${WEBAPP_URL}`})
       .row()
-      .webApp('Local', {url: `https://4e0d-93-105-176-50.ngrok-free.app`})
+      .webApp('Local', {url: `${WEBAPP_URL_LOCAL}`})
   
   bot.catch((err) => {
     const ctx = err.ctx;
