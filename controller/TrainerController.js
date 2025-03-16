@@ -216,7 +216,35 @@ class TrainerController {
                 return res.status(404).json({ error: 'Trainer not found' });
             }
 
-            // Находим бронирование
+            if (status === 'rejected') {
+                // Находим и удаляем бронирование
+                const bookingIndex = trainer.bookedSlots.findIndex(slot => 
+                    slot.client.tgId === clientTgId && 
+                    slot.date === date && 
+                    slot.startTime === startTime
+                );
+
+                if (bookingIndex === -1) {
+                    return res.status(404).json({ error: 'Booking not found' });
+                }
+
+                const canceledBooking = trainer.bookedSlots[bookingIndex];
+                trainer.bookedSlots.splice(bookingIndex, 1);
+                await trainer.save();
+
+                // Отправляем уведомление клиенту через Telegram
+                await TelegramService.sendBookingRejectedNotification(
+                    trainer,
+                    canceledBooking.client,
+                    date,
+                    startTime
+                );
+
+                io.emit('trainerScheduleUpdated', trainer);
+                return res.json({ message: 'Booking cancelled successfully', trainer });
+            }
+
+            // Для других статусов (completed, approved)
             const booking = trainer.bookedSlots.find(slot => 
                 slot.client.tgId === clientTgId && 
                 slot.date === date && 
@@ -231,11 +259,14 @@ class TrainerController {
             booking.status = status;
             await trainer.save();
 
-            // Отправляем уведомление клиенту через Telegram
+            // Отправляем уведомление для подтверждения
             if (status === 'approved') {
-                await TelegramService.sendBookingApprovedNotification(trainer, booking.client, date, startTime);
-            } else if (status === 'rejected') {
-                await TelegramService.sendBookingRejectedNotification(trainer, booking.client, date, startTime);
+                await TelegramService.sendBookingApprovedNotification(
+                    trainer,
+                    booking.client,
+                    date,
+                    startTime
+                );
             }
 
             io.emit('trainerScheduleUpdated', trainer);
