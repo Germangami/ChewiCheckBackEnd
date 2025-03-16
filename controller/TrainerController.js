@@ -1,6 +1,7 @@
 import Trainer from '../model/Trainer.js';
 import { io } from '../index.js';
 import TelegramService from '../services/TelegramService.js';
+import Client from '../model/Client.js';
 
 class TrainerController {
     // Создание тренера
@@ -109,7 +110,7 @@ class TrainerController {
             await TelegramService.sendBookingNotification(trainer, client, date, startTime);
 
             io.emit('trainerScheduleUpdated', trainer);
-            res.json({ message: 'Time slot booked successfully', trainer });
+            res.json(newTrainer);
         } catch (error) {
             console.error('Error booking time slot:', error);
             res.status(500).json({ error: 'Internal server error' });
@@ -120,13 +121,14 @@ class TrainerController {
     async cancelBooking(req, res) {
         try {
             const { trainerId, client, date, startTime } = req.body;
+            
+            // Находим тренера
             const trainer = await Trainer.findOne({ tgId: trainerId });
-
             if (!trainer) {
                 return res.status(404).json({ error: 'Trainer not found' });
             }
 
-            // Находим и удаляем бронирование по tgId клиента
+            // Находим и удаляем бронирование у тренера
             const bookingIndex = trainer.bookedSlots.findIndex(slot => 
                 slot.client.tgId === client.tgId && 
                 slot.date === date && 
@@ -137,8 +139,22 @@ class TrainerController {
                 return res.status(404).json({ error: 'Booking not found' });
             }
 
+            // Удаляем бронирование у тренера
             trainer.bookedSlots.splice(bookingIndex, 1);
             await trainer.save();
+
+            // Находим клиента и удаляем у него эту тренировку
+            const currentClient = await Client.findOne({ tgId: client.tgId });
+            if (currentClient && currentClient.clientType === 'individual') {
+                currentClient.individualTraining.scheduledSessions = 
+                    currentClient.individualTraining.scheduledSessions.filter(session => 
+                        !(session.date === date && session.time === startTime)
+                    );
+                await currentClient.save();
+                
+                // Уведомляем об обновлении клиента
+                io.emit('clientUpdated', currentClient);
+            }
             
             // Отправляем уведомления об отмене
             await TelegramService.sendCancelNotification(
@@ -148,8 +164,14 @@ class TrainerController {
                 startTime
             );
 
+            // Уведомляем об обновлении тренера
             io.emit('trainerScheduleUpdated', trainer);
-            res.json({ message: 'Booking cancelled successfully', trainer });
+            
+            res.json({ 
+                message: 'Booking cancelled successfully', 
+                trainer,
+                client: currentClient 
+            });
         } catch (error) {
             console.error('Error cancelling booking:', error);
             res.status(500).json({ error: 'Internal server error' });

@@ -248,6 +248,32 @@ class ClientController {
             res.status(500).json({ error: 'Server error' });
         }
     }
+
+    // Отмена индивидуальной тренировки клиентом
+    async cancelIndividualTraining(req, res) {
+        const { _id, date, time } = req.body;
+
+        try {
+            const currentClient = await Client.findById(_id);
+
+            if (!currentClient || currentClient.clientType !== 'individual') {
+                return res.status(404).json({ error: 'Individual client not found' });
+            }
+
+            // Удаляем тренировку из расписания клиента
+            currentClient.individualTraining.scheduledSessions = 
+                currentClient.individualTraining.scheduledSessions.filter(session => 
+                    !(session.date === date && session.time === time)
+                );
+
+            await currentClient.save();
+            io.emit('clientUpdated', currentClient);
+            return res.status(200).json(currentClient);
+        } catch(error) {
+            console.error(error);
+            res.status(500).json({ error: 'Server error' });
+        }
+    }
 }
 
 export default new ClientController();
