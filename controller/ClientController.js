@@ -1,5 +1,7 @@
 import Client from '../model/Client.js';
 import { io } from '../index.js';
+import TelegramService from '../services/TelegramService.js';
+import jwt from 'jsonwebtoken';
 
 class ClientController {
     async createClient(req, res) {
@@ -272,6 +274,75 @@ class ClientController {
         } catch(error) {
             console.error(error);
             res.status(500).json({ error: 'Server error' });
+        }
+    }
+
+    async validateWebApp(req, res) {
+        try {
+            const { initData } = req.body;
+            
+            if (!initData) {
+                return res.status(400).json({ message: 'Init data is required' });
+            }
+
+            const userData = TelegramService.validateTelegramWebAppData(initData);
+            return res.json({ valid: true, user: userData });
+        } catch (error) {
+            console.error('WebApp validation error:', error);
+            return res.status(401).json({ 
+                message: 'Invalid Telegram WebApp data',
+                error: error.message 
+            });
+        }
+    }
+
+    async authenticateWebApp(req, res) {
+        try {
+            const { initData } = req.body;
+            
+            // Валидируем данные
+            const userData = TelegramService.validateTelegramWebAppData(initData);
+            
+            // Ищем клиента
+            let client = await Client.findOne({ tgId: userData.id });
+            
+            if (!client) {
+                return res.status(404).json({ message: 'Client not found' });
+            }
+
+            // Создаем JWT токен
+            const token = jwt.sign(
+                { 
+                    userId: client._id,
+                    tgId: client.tgId,
+                    role: 'client'
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+
+            // Обновляем lastActive
+            client.lastActive = new Date();
+            await client.save();
+
+            return res.json({
+                token,
+                user: {
+                    id: client._id,
+                    tgId: client.tgId,
+                    first_name: client.first_name,
+                    last_name: client.last_name,
+                    username: client.username,
+                    role: client.role,
+                    clientType: client.clientType
+                }
+            });
+        } catch (error) {
+            console.error('Authentication error:', error);
+            return res.status(401).json({ 
+                message: 'Authentication failed',
+                error: error.message 
+            });
         }
     }
 }

@@ -15,4 +15,8 @@ clientRouter.get('/getCurrentClient/:tgId', ClientController.getCurrentClient);
 
 clientRouter.post('/scheduleIndividualTraining', ClientController.scheduleIndividualTraining);
 
+// Новый роут для валидации WebApp
+clientRouter.post('/validate-webapp', ClientController.validateWebApp);
+clientRouter.post('/auth', ClientController.authenticateWebApp);
+
 export default clientRouter;
