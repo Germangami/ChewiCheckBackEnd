@@ -8,7 +8,7 @@ dotenv.config();
 const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN);
 const trainerId = 6448727138;
 const WEBAPP_URL = 'https://chewi-check.com';
-const WEBAPP_URL_LOCAL = 'https://c81e-93-105-176-50.ngrok-free.app';
+const WEBAPP_URL_LOCAL = 'https://8ee3-93-105-176-50.ngrok-free.app/';
 const adminId = 469408413;
 
 //КОД БОТА
