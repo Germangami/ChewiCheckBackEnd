@@ -60,7 +60,7 @@ bot.command('start', async (ctx) => {
         // Существующая логика для клиентов
         const clientData = {
             tgId: ctx.from.id,
-            trainerId: creatorId, // Используем ID создателя
+            trainerId: adminId, // Используем ID создателя
             first_name: ctx.from.first_name || '',
             last_name: ctx.from.last_name || '',
             username: ctx.from.username || '',
