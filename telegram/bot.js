@@ -54,10 +54,13 @@ bot.command('start', async (ctx) => {
             return;
         }
 
+        // Определяем, кто создает клиента
+        const creatorId = ctx.from.id === adminId ? adminId : trainerId;
+
         // Существующая логика для клиентов
         const clientData = {
             tgId: ctx.from.id,
-            trainerId,
+            trainerId: creatorId, // Используем ID создателя
             first_name: ctx.from.first_name || '',
             last_name: ctx.from.last_name || '',
             username: ctx.from.username || '',
