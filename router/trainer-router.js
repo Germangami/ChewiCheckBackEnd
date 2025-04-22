@@ -1,5 +1,6 @@
 import Router from 'express';
 import TrainerController from '../controller/TrainerController.js';
+import OpenAIController from '../controller/OpenAIController.js';
 
 const trainerRouter = new Router();
 
@@ -12,5 +13,6 @@ trainerRouter.post('/book', TrainerController.bookTimeSlot);
 trainerRouter.post('/cancel', TrainerController.cancelBooking);
 trainerRouter.put('/schedule', TrainerController.updateWorkSchedule);
 trainerRouter.patch('/booking/status', TrainerController.updateBookingStatus);
+trainerRouter.post('/chat', OpenAIController.sendMessage);
 
 export default trainerRouter;
