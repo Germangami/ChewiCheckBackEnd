@@ -2,7 +2,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import clientRouter from './router/client-router.js';
 import trainerRouter from './router/trainer-router.js';
-import openaiRouter from './router/openai-router.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Server } from 'socket.io';
@@ -42,7 +41,6 @@ app.use(express.json());
 app.use(cors());
 app.use('/client', clientRouter);
 app.use('/trainer', trainerRouter);
-app.use('/openai', openaiRouter);
 
 // MongoDB подключение
 const connectDB = async () => {
